@@ -1,2 +1,0 @@
-# SIMAK-SMAI-DUBA
-Database SMAI DUBA
