@@ -1,0 +1,112 @@
+=========================================================================
+SIMAK SMAI DUBA — PAKET APLIKASI (dipasang seperti aplikasi biasa di HP)
+=========================================================================
+Hasil akhirnya: ikon di layar utama HP; dibuka PENUH LAYAR tanpa bilah
+alamat atau tombol browser; ada layar pembuka (splash) dan layar "tidak
+ada koneksi". Isinya tetap aplikasi SIMAK yang sama (data dari Google
+Sheets), jadi semua perbaikan di Index.html otomatis ikut.
+
+Isi paket
+  index.html            pembungkus layar penuh
+  config.js             <- SATU-SATUNYA yang perlu Anda ubah (alamat aplikasi)
+  manifest.webmanifest  data aplikasi (nama, warna, ikon)
+  sw.js                 service worker (syarat agar bisa dipasang)
+  icons/                ikon bawaan (topi toga hijau) — boleh diganti logo sekolah
+  .nojekyll             (hanya untuk GitHub Pages; abaikan bila tidak dipakai)
+
+
+=========================================================================
+LANGKAH 1 — Pastikan aplikasi boleh dibuka di dalam pembungkus
+=========================================================================
+Di Kode.gs cari fungsi doGet dan baris:
+      setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+* Jika SUDAH ada ALLOWALL -> tidak perlu diubah.
+* Jika tidak ada / bertuliskan DEFAULT -> ganti menjadi ALLOWALL pada
+  halaman yang dikembalikan (Index dan Gate).
+Lalu: Deploy > Manage deployments > Edit > New version > Deploy.
+
+CATATAN KEAMANAN: ALLOWALL berarti situs lain juga bisa membuka aplikasi
+di dalam bingkai. Itu harga yang harus dibayar agar bisa dipasang sebagai
+aplikasi lewat cara ini. Tanyakan ke saya bila ingin penjaga tambahan
+(aplikasi hanya mau berjalan di dalam bingkai milik Anda sendiri).
+
+
+=========================================================================
+LANGKAH 2 — Isi alamat aplikasi
+=========================================================================
+1. Buka aplikasi Anda di browser, pilih STAF sampai layar login staf tampil.
+2. Salin SELURUH alamat dari bilah alamat (diawali https://script.google.com/
+   dan memuat /exec).
+3. Buka config.js dengan Notepad, ganti tulisan
+      GANTI_DENGAN_ALAMAT_APLIKASI_STAF_ANDA
+   dengan alamat tadi (tetap di dalam tanda kutip). Simpan.
+
+
+=========================================================================
+LANGKAH 3 — Taruh paket ini di hosting gratis (butuh alamat https)
+=========================================================================
+Pilih SATU:
+ a) Netlify (paling mudah): daftar gratis, lalu seret FOLDER paket ini ke
+    halaman "deploy manual / Drop". Anda mendapat alamat seperti
+    https://nama-anda.netlify.app
+ b) Cloudflare Pages: buat proyek > "Direct upload" > unggah folder ini.
+ c) GitHub Pages: buat repositori bernama  NAMAANDA.github.io , unggah
+    seluruh isi folder ini, aktifkan Pages.
+Tampilan situs-situs itu bisa berubah; intinya: unggah folder, dapat alamat
+https. Untuk membuat APK nanti (Langkah 6), pilih (a), (b), atau (c) — jangan
+GitHub Pages "proyek" (alamat berakhiran /nama-proyek), sebab APK butuh berkas
+verifikasi di akar alamat.
+
+
+=========================================================================
+LANGKAH 4 — Pasang di HP (Android, Chrome)
+=========================================================================
+1. Buka alamat hosting tadi di Chrome HP.
+2. Menu titik tiga > "Instal aplikasi" (atau "Tambahkan ke layar utama" lalu
+   pilih Instal).
+3. Ikon "SIMAK" muncul di layar utama. Buka dari sana: tampil penuh layar
+   tanpa bilah alamat.
+Untuk komputer (Chrome/Edge): ikon "pasang" di ujung kanan bilah alamat.
+
+
+=========================================================================
+LANGKAH 5 — Ganti ikon dengan logo sekolah (opsional)
+=========================================================================
+Siapkan logo berbentuk persegi, simpan sebagai PNG dengan nama dan ukuran
+PERSIS seperti di folder icons/ (192x192, 512x512, 512x512 maskable — beri
+ruang kosong di tepi — dan 180x180), timpa berkas lama, unggah ulang.
+Aplikasi yang sudah terpasang mengambil ikon baru setelah beberapa waktu
+(atau hapus lalu pasang ulang).
+
+
+=========================================================================
+LANGKAH 6 — (Opsional) Jadikan berkas APK sungguhan
+=========================================================================
+Setelah Langkah 1-4 berjalan, paket yang sama bisa dibungkus menjadi APK
+tanpa Android Studio:
+1. Buka pwabuilder.com, masukkan alamat hosting Anda, ikuti menu
+   "Package for stores" > Android. Unduh paketnya (APK untuk dipasang
+   langsung, atau AAB bila ingin ke Play Store).
+2. Paket itu memuat berkas  assetlinks.json  (bukti bahwa APK dan situs
+   Anda milik orang yang sama). Taruh di hosting pada alamat
+      https://ALAMAT-ANDA/.well-known/assetlinks.json
+   lalu unggah ulang. Tanpa langkah ini muncul bilah alamat / ditolak.
+3. Pasang APK di HP (izinkan "pasang dari sumber tidak dikenal").
+Langkah persis di PWABuilder bisa berubah; saya bisa memandu langkah demi
+langkah saat Anda sampai di tahap ini.
+
+
+=========================================================================
+BILA ADA MASALAH
+=========================================================================
+* Layar putih / "refused to connect"  -> ALLOWALL belum aktif atau belum
+  dibuat New version (Langkah 1).
+* Muncul "Alamat aplikasi belum diisi" -> config.js belum diubah atau alamat
+  salah (harus diawali https://script.google.com/macros/ atau /a/).
+* Login gagal hanya saat dibuka lewat aplikasi terpasang -> kabari saya
+  (pesan error + HP/Chrome yang dipakai); ini perlu diuji di perangkat nyata.
+* Tombol "Kembali ke Pemilihan" membawa keluar dari aplikasi terpasang ->
+  wajar (pemindahan halaman tingkat atas). Gunakan alamat langsung aplikasi
+  staf seperti di Langkah 2.
+* Memperbarui isi aplikasi: cukup ubah Index.html/Kode.gs lalu buat New
+  version di Apps Script. Pembungkus TIDAK perlu diunggah ulang.
