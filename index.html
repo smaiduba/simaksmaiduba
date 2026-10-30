@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#047857">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SIMAK">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>SIMAK SMAI DUBA</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #020617; overflow: hidden; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+  #app { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; border: 0; background: #020617; }
+  .layar { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center;
+           gap: 14px; padding: 24px; text-align: center; color: #e2e8f0; background: #020617; transition: opacity .35s; }
+  .layar[hidden] { display: none; }
+  .layar.pudar { opacity: 0; pointer-events: none; }
+  .layar img { width: 92px; height: 92px; border-radius: 24px; box-shadow: 0 18px 40px -14px rgba(16,185,129,.55); }
+  .layar .judul { font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: #fff; }
+  .layar .sub { font-size: 13px; line-height: 1.55; color: #94a3b8; max-width: 320px; }
+  .spin { width: 26px; height: 26px; border: 3px solid rgba(16,185,129,.25); border-top-color: #10b981; border-radius: 50%; animation: putar .8s linear infinite; }
+  @keyframes putar { to { transform: rotate(360deg); } }
+  .tombol { margin-top: 6px; padding: 12px 22px; border: 0; border-radius: 14px; font-size: 14px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #10b981, #059669); }
+
+  /* ===== PENAMPIL CETAK (di dalam aplikasi) ===== */
+  #viewer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; flex-direction: column; background: #cbd5e1; }
+  #viewer[hidden] { display: none; }
+  .vbar { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 6px 8px; padding-top: calc(6px + env(safe-area-inset-top, 0px));
+          background: #047857; color: #fff; }
+  .vjudul { flex: 1; min-width: 0; font-size: 15px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vbtn { min-width: 44px; height: 44px; padding: 0 12px; border: 0; border-radius: 12px; font-size: 14px; font-weight: 700; color: #fff; background: rgba(255,255,255,.16); }
+  .vbtn:active { background: rgba(255,255,255,.3); }
+  .vbtn.utama { background: #fff; color: #065f46; }
+  .vbody { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; position: relative; }
+  #v-sizer { position: relative; margin: 0 auto; }
+  #v-frame { position: absolute; top: 0; left: 0; border: 0; background: #fff; transform-origin: 0 0; box-shadow: 0 0 0 1px #cbd5e1; }
+  .v-muat, .v-pesan { position: absolute; left: 12px; right: 12px; z-index: 3; text-align: center; border-radius: 14px; padding: 12px 14px; font-size: 13px; }
+  .v-muat { top: 70px; background: #0f172a; color: #e2e8f0; }
+  .v-pesan { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); background: #fff; color: #0f172a; box-shadow: 0 10px 30px -10px rgba(0,0,0,.5); }
+  .v-muat[hidden], .v-pesan[hidden] { display: none; }
+</style>
+</head>
+<body>
+
+<div id="splash" class="layar">
+  <img src="icons/icon-192.png" alt="">
+  <div class="judul">SIMAK SMAI DUBA</div>
+  <div class="spin" aria-hidden="true"></div>
+</div>
+
+<div id="offline" class="layar" hidden>
+  <img src="icons/icon-192.png" alt="">
+  <div class="judul">Tidak ada koneksi internet</div>
+  <div class="sub">Aplikasi membutuhkan internet untuk membaca data sekolah. Periksa koneksi Anda lalu coba lagi.</div>
+  <button type="button" class="tombol" onclick="location.reload()">Coba lagi</button>
+</div>
+
+<div id="setup" class="layar" hidden>
+  <div class="judul">Alamat aplikasi belum diisi</div>
+  <div class="sub">Buka berkas <b>config.js</b>, ganti tulisan <b>GANTI_DENGAN_ALAMAT_APLIKASI_ANDA</b> dengan alamat aplikasi (diawali https://script.google.com/ dan berakhiran /exec), lalu unggah ulang.</div>
+</div>
+
+<iframe id="app" title="SIMAK SMAI DUBA" allow="clipboard-write; fullscreen"></iframe>
+
+<div id="viewer" hidden>
+  <div class="vbar">
+    <button type="button" class="vbtn" id="v-tutup" aria-label="Tutup">&#10005;</button>
+    <div class="vjudul">Pratinjau Cetak</div>
+    <button type="button" class="vbtn" id="v-zoom">Perbesar</button>
+    <button type="button" class="vbtn" id="v-luar" aria-label="Buka di Chrome" title="Buka di Chrome">&#8599;</button>
+    <button type="button" class="vbtn utama" id="v-cetak">Cetak</button>
+  </div>
+  <div class="vbody" id="v-body">
+    <div id="v-sizer"><iframe id="v-frame" title="Pratinjau cetak"></iframe></div>
+    <div class="v-muat" id="v-muat">Menyiapkan halaman&hellip;</div>
+    <div class="v-pesan" id="v-pesan" hidden></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+  (function () {
+    var $ = function (id) { return document.getElementById(id); };
+    var bingkai = $('app'), splash = $('splash'), offline = $('offline'), setup = $('setup');
+    var viewer = $('viewer'), vFrame = $('v-frame'), vSizer = $('v-sizer'), vBody = $('v-body');
+    var vMuat = $('v-muat'), vPesan = $('v-pesan'), vZoom = $('v-zoom');
+
+    var RE_URL = /^https:\/\/script\.google\.com\/(macros|a\/)/;
+    var KUNCI_TERAKHIR = 'simak_terakhir';
+    function urlSah(u) { return typeof u === 'string' && RE_URL.test(u); }
+    function asalSah(o) { return o === 'https://script.google.com' || /^https:\/\/[a-z0-9-]+\.googleusercontent\.com$/.test(String(o)); }
+    function tampil(el, ya) { el.hidden = !ya; }
+
+    if (!urlSah(String(window.APP_URL || ''))) { tampil(splash, false); tampil(setup, true); bingkai.style.display = 'none'; return; }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+    }
+
+    /* ---------- aplikasi utama ---------- */
+    function alamatAwal() {
+      if (window.INGAT_PILIHAN === false) return window.APP_URL;
+      try { var t = localStorage.getItem(KUNCI_TERAKHIR); if (urlSah(t)) return t; } catch (e) {}
+      return window.APP_URL;
+    }
+    function muat() {
+      if (!navigator.onLine) { tampil(splash, false); tampil(offline, true); return; }
+      tampil(offline, false); tampil(splash, true); splash.classList.remove('pudar');
+      bingkai.src = alamatAwal();
+    }
+    bingkai.addEventListener('load', function () {
+      setTimeout(function () { splash.classList.add('pudar'); setTimeout(function () { tampil(splash, false); }, 400); }, 350);
+    });
+    window.addEventListener('online', muat);
+    window.addEventListener('offline', function () { tampil(offline, true); });
+
+    /* ---------- penampil cetak ---------- */
+    var LEBAR = 860, tinggi = 1300, mode = 'pas', sumberCetak = null, terbuka = false, urlCetak = '', pewaktu = null;
+
+    function ukur() {
+      var lebarLayar = vBody.clientWidth || window.innerWidth || 360;
+      var s = (mode === 'pas') ? Math.min(1, lebarLayar / LEBAR) : 1;
+      vFrame.style.width = LEBAR + 'px';
+      vFrame.style.height = tinggi + 'px';
+      vFrame.style.transform = 'scale(' + s + ')';
+      vSizer.style.width = Math.ceil(LEBAR * s) + 'px';
+      vSizer.style.height = Math.ceil(tinggi * s) + 'px';
+      vZoom.textContent = (mode === 'pas') ? 'Perbesar' : 'Pas layar';
+    }
+    function bukaPenampil(url) {
+      if (!urlSah(url)) return;
+      urlCetak = url; sumberCetak = null; terbuka = true; mode = 'pas'; tinggi = 1300; LEBAR = 860;
+      tampil(viewer, true); tampil(vMuat, true); tampil(vPesan, false);
+      ukur();
+      vFrame.src = url;
+      try { history.pushState({ penampil: 1 }, ''); } catch (e) {}
+      clearTimeout(pewaktu);
+      pewaktu = setTimeout(function () {
+        if (!terbuka || sumberCetak) return;
+        vPesan.textContent = 'Halaman lama dimuat. Bila tetap kosong, ketuk tombol \u2197 di atas untuk membukanya di Chrome.';
+        tampil(vPesan, true);
+      }, 25000);
+    }
+    function tutupPenampil(dariKembali) {
+      if (!terbuka) return;
+      terbuka = false; sumberCetak = null; clearTimeout(pewaktu);
+      tampil(viewer, false); vFrame.src = 'about:blank';
+      if (!dariKembali) { try { if (history.state && history.state.penampil) history.back(); } catch (e) {} }
+    }
+    window.addEventListener('popstate', function () { if (terbuka) tutupPenampil(true); });
+    window.addEventListener('resize', function () { if (terbuka) ukur(); });
+    $('v-tutup').addEventListener('click', function () { tutupPenampil(false); });
+    vZoom.addEventListener('click', function () { mode = (mode === 'pas') ? 'penuh' : 'pas'; ukur(); });
+    $('v-luar').addEventListener('click', function () { if (urlCetak) window.open(urlCetak, '_blank'); });
+    $('v-cetak').addEventListener('click', function () {
+      if (!sumberCetak) { vPesan.textContent = 'Halaman belum siap dicetak. Tunggu sebentar lalu coba lagi.'; tampil(vPesan, true); return; }
+      try { sumberCetak.postMessage({ simak: 'cetak-sekarang' }, '*'); } catch (e) {}
+      vPesan.textContent = 'Bila jendela cetak tidak muncul, ketuk tombol \u2197 di atas lalu cetak dari Chrome.';
+      tampil(vPesan, true);
+      setTimeout(function () { tampil(vPesan, false); }, 6000);
+    });
+
+    /* ---------- pesan dari halaman di dalam bingkai ---------- */
+    window.addEventListener('message', function (e) {
+      var d = e.data;
+      if (!d || typeof d !== 'object' || !asalSah(e.origin)) return;
+
+      if (d.simak === 'buka' && urlSah(d.url)) {
+        tutupPenampil(false);
+        if (window.INGAT_PILIHAN !== false) { try { localStorage.setItem(KUNCI_TERAKHIR, d.url); } catch (x) {} }
+        bingkai.src = d.url;
+      } else if (d.simak === 'cetak' && urlSah(d.url)) {
+        bukaPenampil(d.url);
+      } else if (d.simak === 'cetak-siap' && terbuka) {
+        sumberCetak = e.source;
+        if (typeof d.w === 'number' && d.w > 300 && d.w < 3000) LEBAR = Math.max(LEBAR, Math.ceil(d.w));
+        if (typeof d.h === 'number' && d.h > 300 && d.h < 40000) tinggi = Math.ceil(d.h);
+        tampil(vMuat, false); tampil(vPesan, false); ukur();
+      } else if (d.simak === 'tutup-cetak') {
+        tutupPenampil(false);
+      }
+    });
+
+    muat();
+  })();
+</script>
+</body>
+</html>
