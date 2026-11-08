@@ -175,6 +175,8 @@
       if (d.simak === 'buka' && urlSah(d.url)) {
         tutupPenampil(false);
         if (window.INGAT_PILIHAN !== false) { try { localStorage.setItem(KUNCI_TERAKHIR, d.url); } catch (x) {} }
+        tampil(splash, true);
+        splash.classList.remove('pudar');
         bingkai.src = d.url;
       } else if (d.simak === 'cetak' && urlSah(d.url)) {
         bukaPenampil(d.url);
