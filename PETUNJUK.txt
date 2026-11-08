@@ -1,0 +1,19 @@
+=========================================================================
+SIMAK SMAI DUBA — PAKET APLIKASI v3 (perpindahan instan)
+=========================================================================
+Yang baru di v3
+  * Pemilihan, Staf, dan Alumni hidup berdampingan: berpindah di antaranya
+    tidak lagi memuat ulang halaman. "Kembali ke Pemilihan" instan.
+  * Halaman lain dimuat diam-diam di latar belakang setelah layar pertama siap
+    (atur di config.js: PRAMUAT dan PRAMUAT_MIN_RAM).
+  * Navigasi memakai nama tujuan (pemilihan/staf/alumni), bukan alamat.
+
+Cara memperbarui
+  1) Pasang Patch_percepatan.txt Bagian 1-3 di Apps Script, lalu
+     Deploy > Manage deployments > Edit > New version > Deploy.
+  2) Isi config.js: APP_URL = alamat dasar /exec.
+  3) Netlify: Deploys > seret folder ini. Lalu tutup & buka lagi aplikasinya.
+
+Catatan
+  * Bila HP cepat panas atau RAM-nya kecil: PRAMUAT = [] di config.js.
+  * INGAT_PILIHAN = false membuat aplikasi selalu mulai dari layar pilihan.
