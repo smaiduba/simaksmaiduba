@@ -115,7 +115,8 @@
       bingkai.src = alamatAwal();
     }
     bingkai.addEventListener('load', function () {
-      setTimeout(function () { splash.classList.add('pudar'); setTimeout(function () { tampil(splash, false); }, 400); }, 350);
+      splash.classList.add('pudar');
+      setTimeout(function () { tampil(splash, false); }, 250);
     });
     window.addEventListener('online', muat);
     window.addEventListener('offline', function () { tampil(offline, true); });
