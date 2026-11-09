@@ -1,12 +1,12 @@
 {
-  "id": "/",
+  "id": "./",
   "name": "SIMAK SMAI DUBA",
   "short_name": "SIMAK",
   "description": "Sistem Informasi Akademik SMA Al-Itsbatiyah Darul Ulum Banyuanyar",
   "lang": "id",
   "dir": "ltr",
-  "start_url": "/?source=pwa",
-  "scope": "/",
+  "start_url": "./?source=pwa",
+  "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "portrait-primary",
@@ -15,40 +15,40 @@
   "categories": ["education", "productivity", "utilities"],
   "prefer_related_applications": false,
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
     {
       "name": "Login Staf",
       "short_name": "Staf",
       "description": "Masuk ke dashboard staf",
-      "url": "/?target=staff"
+      "url": "./?target=staff"
     },
     {
       "name": "Portal Alumni",
       "short_name": "Alumni",
       "description": "Masuk ke portal alumni",
-      "url": "/?target=alumni"
+      "url": "./?target=alumni"
     },
     {
       "name": "Absensi Kelas",
       "short_name": "Absensi",
       "description": "Buka halaman absensi kelas",
-      "url": "/?target=absen-kelas"
+      "url": "./?target=absen-kelas"
     },
     {
       "name": "Nilai Akademik",
       "short_name": "Nilai",
       "description": "Buka halaman nilai akademik",
-      "url": "/?target=nilai"
+      "url": "./?target=nilai"
     },
     {
       "name": "Kalender Akademik",
       "short_name": "Kalender",
       "description": "Agenda kegiatan dan hari libur sekolah",
-      "url": "/?target=kaldik"
+      "url": "./?target=kaldik"
     }
   ]
 }
