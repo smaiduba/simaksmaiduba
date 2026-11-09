@@ -13,7 +13,7 @@
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
-<!-- ⚡ Resource hints — percepat cold start -->
+<!-- ⚡ Resource hints -->
 <link rel="preconnect" href="https://script.google.com" crossorigin>
 <link rel="dns-prefetch" href="https://script.google.com">
 <link rel="preconnect" href="https://www.google.com">
@@ -31,34 +31,98 @@
     --border: #1e293b;
   }
   html, body {
-    margin: 0; height: 100%; background: var(--bg); overflow: hidden;
+    margin: 0; height: 100%;
+    background: var(--bg); overflow: hidden;
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
   #app { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: var(--bg); }
 
-  /* ---------- Layar (splash/offline/setup) ---------- */
+  /* ============================================================
+     PULL-TO-REFRESH ZONE (invisible grab handle di atas)
+     ============================================================ */
+  #pull-zone {
+    position: fixed; top: 0; left: 0; right: 0; height: 30px;
+    z-index: 15;
+    touch-action: none;
+  }
+  #pull-indicator {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 6px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    z-index: 18;
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--bg-elev);
+    color: var(--text);
+    font-size: 12px; font-weight: 600;
+    box-shadow: 0 8px 24px -8px rgba(0,0,0,.55);
+    border: 1px solid rgba(16,185,129,.3);
+    pointer-events: none;
+    opacity: 0;
+    transition: transform 120ms linear, opacity 120ms linear;
+    will-change: transform, opacity;
+  }
+  #pull-indicator .pull-spin {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(16,185,129,.25);
+    border-top-color: #10b981;
+    border-radius: 50%;
+    animation: putar .8s linear infinite;
+  }
+  #pull-indicator.ready { border-color: rgba(16,185,129,.7); }
+  #pull-indicator.ready .pull-spin { border-top-color: #34d399; }
+  #pull-indicator .pull-arrow {
+    width: 14px; height: 14px;
+    transition: transform 200ms ease;
+  }
+  #pull-indicator.ready .pull-arrow { transform: rotate(180deg); }
+
+  /* ============================================================
+     LAYAR (splash/offline/setup)
+     ============================================================ */
   .layar {
     position: fixed; inset: 0; z-index: 5;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 14px; padding: 24px; text-align: center;
     color: var(--text); background: var(--bg);
-    transition: opacity .3s ease;
+    transition: opacity .28s ease;
   }
   .layar[hidden] { display: none; }
   .layar.pudar { opacity: 0; pointer-events: none; }
-  .layar img {
-    width: 92px; height: 92px; border-radius: 24px;
+
+  /* ---------- Logo SVG draw-in ---------- */
+  .logo-wrap {
+    width: 92px; height: 92px; padding: 14px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(16,185,129,.14), rgba(20,184,166,.06));
+    border: 1px solid rgba(16,185,129,.35);
     box-shadow: 0 18px 40px -14px rgba(16,185,129,.55);
-    animation: masuk 500ms cubic-bezier(0.16,1,0.3,1);
+    display: flex; align-items: center; justify-content: center;
+    animation: logoFade 400ms cubic-bezier(0.16,1,0.3,1);
   }
-  @keyframes masuk {
-    from { opacity: 0; transform: scale(.85) translateY(8px); }
+  @keyframes logoFade {
+    from { opacity: 0; transform: scale(.85) translateY(6px); }
     to   { opacity: 1; transform: scale(1) translateY(0); }
   }
-  .layar .judul { font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: #fff; }
-  .layar .sub { font-size: 13px; line-height: 1.55; color: var(--text-dim); max-width: 320px; }
-  .step { font-size: 12px; color: var(--text-dim); font-weight: 500; min-height: 18px; }
+  #splash-logo { width: 100%; height: 100%; display: block; }
+  #splash-logo .draw-1,
+  #splash-logo .draw-2 {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: draw 1.4s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  #splash-logo .draw-2 { animation-delay: 0.5s; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  .judul { font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: #fff; }
+  .sub { font-size: 13px; line-height: 1.55; color: var(--text-dim); max-width: 320px; }
+  .step {
+    font-size: 12px; color: var(--text-dim); font-weight: 500;
+    min-height: 18px;
+  }
 
   /* ---------- Progress bar ---------- */
   .prog {
@@ -89,38 +153,20 @@
   }
   .tombol:active { transform: scale(.97); }
 
-  /* ---------- Banner offline ---------- */
-  #banner {
+  /* ---------- Banner offline & update ---------- */
+  #banner, #update-banner {
     position: fixed; left: 12px; right: 12px;
-    top: calc(env(safe-area-inset-top, 0px) + 8px);
-    z-index: 30; display: none; align-items: center; gap: 8px;
-    padding: 10px 14px; border-radius: 12px;
-    background: #7f1d1d; color: #fecaca;
-    font-size: 12.5px; font-weight: 600;
-    box-shadow: 0 8px 24px -8px rgba(0,0,0,.6);
-  }
-  #banner.show { display: flex; animation: slideDown 300ms cubic-bezier(0.16,1,0.3,1); }
-  @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ---------- Banner update ---------- */
-  #update-banner {
-    position: fixed; left: 12px; right: 12px;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
-    z-index: 35; display: none; align-items: center; gap: 10px;
-    padding: 12px 14px; border-radius: 14px;
-    background: var(--bg-elev); color: var(--text);
+    display: none; align-items: center; gap: 10px;
     font-size: 13px; font-weight: 600;
-    border: 1px solid rgba(16,185,129,.35);
-    box-shadow: 0 16px 40px -8px rgba(0,0,0,.6);
+    border-radius: 12px; padding: 12px 14px;
   }
-  #update-banner.show { display: flex; animation: slideUp 300ms cubic-bezier(0.16,1,0.3,1); }
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+  #banner { top: calc(env(safe-area-inset-top,0px) + 8px); z-index: 30;
+            background: #7f1d1d; color: #fecaca; box-shadow: 0 8px 24px -8px rgba(0,0,0,.6); }
+  #update-banner { bottom: calc(env(safe-area-inset-bottom,0px) + 12px); z-index: 35;
+                   background: var(--bg-elev); color: var(--text);
+                   border: 1px solid rgba(16,185,129,.35); box-shadow: 0 16px 40px -8px rgba(0,0,0,.6); }
+  #banner.show, #update-banner.show { display: flex; animation: slideIn 300ms cubic-bezier(0.16,1,0.3,1); }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
   #update-banner button {
     margin-left: auto; padding: 8px 14px; border: 0; border-radius: 10px;
     background: linear-gradient(135deg, #10b981, #059669);
@@ -128,51 +174,31 @@
   }
 
   /* ---------- Penampil cetak ---------- */
-  #viewer {
-    position: fixed; inset: 0; z-index: 20;
-    display: flex; flex-direction: column;
-    background: #cbd5e1;
-  }
+  #viewer { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; background: #cbd5e1; }
   #viewer[hidden] { display: none; }
   .vbar {
     flex: 0 0 auto; display: flex; align-items: center; gap: 6px;
     padding: 6px 8px; padding-top: calc(6px + env(safe-area-inset-top, 0px));
     background: #047857; color: #fff;
     box-shadow: 0 2px 12px -4px rgba(0,0,0,.3);
-    transition: transform 100ms linear;
-    will-change: transform;
+    transition: transform 100ms linear; will-change: transform;
   }
-  .vjudul {
-    flex: 1; min-width: 0;
-    font-size: 14px; font-weight: 800; letter-spacing: -.01em;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .vbtn {
-    min-width: 44px; height: 44px; padding: 0 12px;
-    border: 0; border-radius: 12px;
-    font-size: 14px; font-weight: 700; color: #fff;
-    background: rgba(255,255,255,.16);
-    cursor: pointer; transition: background 150ms, transform 150ms;
-  }
+  .vjudul { flex: 1; min-width: 0; font-size: 14px; font-weight: 800;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vbtn { min-width: 44px; height: 44px; padding: 0 12px; border: 0; border-radius: 12px;
+          font-size: 14px; font-weight: 700; color: #fff;
+          background: rgba(255,255,255,.16); cursor: pointer;
+          transition: background 150ms, transform 150ms; }
   .vbtn:active { background: rgba(255,255,255,.3); transform: scale(.95); }
   .vbtn.utama { background: #fff; color: #065f46; }
   .vbtn.utama:active { background: #e2e8f0; }
-  .vbody {
-    flex: 1; overflow: auto;
-    -webkit-overflow-scrolling: touch;
-    position: relative;
-  }
+  .vbody { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; position: relative; }
   #v-sizer { position: relative; margin: 0 auto; }
-  #v-frame {
-    position: absolute; top: 0; left: 0;
-    border: 0; background: #fff;
-    transform-origin: 0 0;
-    box-shadow: 0 0 0 1px #cbd5e1;
-  }
+  #v-frame { position: absolute; top: 0; left: 0; border: 0; background: #fff;
+             transform-origin: 0 0; box-shadow: 0 0 0 1px #cbd5e1; }
   .v-muat, .v-pesan {
     position: absolute; left: 12px; right: 12px; z-index: 3;
-    text-align: center; border-radius: 14px;
-    padding: 12px 14px; font-size: 13px;
+    text-align: center; border-radius: 14px; padding: 12px 14px; font-size: 13px;
   }
   .v-muat {
     top: calc(env(safe-area-inset-top, 0px) + 70px);
@@ -186,36 +212,82 @@
     box-shadow: 0 10px 30px -10px rgba(0,0,0,.5);
   }
   .v-muat[hidden], .v-pesan[hidden] { display: none; }
+
+  /* ============================================================
+     MODE HEMAT DATA (saveData / 2G)
+     ============================================================ */
+  .hemat-data .logo-wrap { animation: none !important; }
+  .hemat-data #splash-logo .draw-1,
+  .hemat-data #splash-logo .draw-2 {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+  .hemat-data .spin { animation-duration: 1.2s !important; }
+  .hemat-data .prog .bar { transition: none !important; }
+  .hemat-data #banner.show,
+  .hemat-data #update-banner.show { animation: none !important; }
 </style>
 </head>
 <body>
 
-<!-- SPLASH -->
+<!-- ============ SPLASH ============ -->
 <div id="splash" class="layar">
-  <img src="icons/icon-192.png" alt="">
+  <div class="logo-wrap">
+    <svg id="splash-logo" viewBox="0 0 48 48" fill="none"
+         stroke-linecap="round" stroke-linejoin="round">
+      <defs>
+        <linearGradient id="splash-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#34d399"/>
+          <stop offset="100%" stop-color="#14b8a6"/>
+        </linearGradient>
+      </defs>
+      <path class="draw-1" pathLength="1" d="M44 20v12M4 20l20-10 20 10-20 10z"
+            stroke="url(#splash-grad)" stroke-width="2.5"/>
+      <path class="draw-2" pathLength="1" d="M12 24v10c6 6 18 6 24 0V24"
+            stroke="url(#splash-grad)" stroke-width="2.5"/>
+    </svg>
+  </div>
   <div class="judul">SIMAK SMAI DUBA</div>
   <div class="step" id="splash-step">Menghubungkan ke server…</div>
   <div class="prog"><div class="bar" id="splash-bar"></div></div>
 </div>
 
-<!-- OFFLINE -->
+<!-- ============ OFFLINE ============ -->
 <div id="offline" class="layar" hidden>
-  <img src="icons/icon-192.png" alt="">
+  <div class="logo-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8"
+         stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%">
+      <line x1="1" y1="1" x2="23" y2="23"/>
+      <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+      <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+      <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
+      <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+      <line x1="12" y1="20" x2="12.01" y2="20"/>
+    </svg>
+  </div>
   <div class="judul">Tidak ada koneksi internet</div>
   <div class="sub">Aplikasi membutuhkan internet untuk membaca data sekolah. Periksa koneksi Anda lalu coba lagi.</div>
   <button type="button" class="tombol" id="offline-retry">Coba lagi</button>
 </div>
 
-<!-- SETUP -->
+<!-- ============ SETUP ============ -->
 <div id="setup" class="layar" hidden>
   <div class="judul">Alamat aplikasi belum diisi</div>
   <div class="sub">Buka berkas <b>config.js</b>, ganti tulisan <b>GANTI_DENGAN_ALAMAT_APLIKASI_ANDA</b> dengan alamat aplikasi (diawali https://script.google.com/ dan berakhiran /exec), lalu unggah ulang.</div>
 </div>
 
-<!-- MAIN APP FRAME -->
+<!-- ============ PULL-TO-REFRESH ZONE (invisible) ============ -->
+<div id="pull-zone" aria-hidden="true"></div>
+<div id="pull-indicator" aria-hidden="true">
+  <div class="pull-spin"></div>
+  <span id="pull-label">Tarik ke bawah…</span>
+</div>
+
+<!-- ============ MAIN APP FRAME ============ -->
 <iframe id="app" title="SIMAK SMAI DUBA" allow="clipboard-write; fullscreen"></iframe>
 
-<!-- PRINT VIEWER -->
+<!-- ============ PRINT VIEWER ============ -->
 <div id="viewer" hidden>
   <div class="vbar" id="vbar">
     <button type="button" class="vbtn" id="v-tutup" aria-label="Tutup">&#10005;</button>
@@ -234,13 +306,13 @@
   </div>
 </div>
 
-<!-- BANNER OFFLINE -->
+<!-- ============ BANNER OFFLINE ============ -->
 <div id="banner" role="status">
   <span>⚠️</span>
   <span id="banner-text">Koneksi terputus — menunggu internet kembali…</span>
 </div>
 
-<!-- BANNER UPDATE -->
+<!-- ============ BANNER UPDATE ============ -->
 <div id="update-banner" role="status">
   <span style="font-size:18px">✨</span>
   <span>Versi baru tersedia</span>
@@ -262,15 +334,27 @@
   function urlSah(u) { return typeof u === 'string' && RE_URL.test(u); }
   function asalSah(o) { return o === 'https://script.google.com' || /^https:\/\/[a-z0-9-]+\.googleusercontent\.com$/.test(String(o)); }
   function tampil(el, ya) { el.hidden = !ya; }
-  function haptic() { try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} }
+  function haptic(ms) { try { navigator.vibrate && navigator.vibrate(ms || 8); } catch (e) {} }
 
-  // Validasi URL config
+  // Validasi config
   if (!urlSah(String(window.APP_URL || ''))) {
-    tampil(splash, false);
-    tampil(setup, true);
+    tampil(splash, false); tampil(setup, true);
     bingkai.style.display = 'none';
     return;
   }
+
+  // ============================================================
+  // 3. Deteksi mode hemat data / koneksi lambat
+  // ============================================================
+  var slowNet = false;
+  try {
+    if (navigator.connection) {
+      var conn = navigator.connection;
+      if (conn.saveData === true) slowNet = true;
+      else if (['slow-2g', '2g'].indexOf(conn.effectiveType) !== -1) slowNet = true;
+    }
+  } catch (e) {}
+  if (slowNet) document.documentElement.classList.add('hemat-data');
 
   // ============================================================
   // Service worker + deteksi update
@@ -289,6 +373,8 @@
             }
           });
         });
+        // Polling tiap 5 menit untuk app yang dibiarkan terbuka
+        setInterval(function () { reg.update().catch(function () {}); }, 5 * 60 * 1000);
       }).catch(function () {});
     });
     navigator.serviceWorker.addEventListener('controllerchange', function () {
@@ -307,19 +393,9 @@
   });
 
   // ============================================================
-  // Install prompt (bila belum terpasang)
-  // ============================================================
-  var deferredPrompt = null;
-  window.addEventListener('beforeinstallprompt', function (e) {
-    e.preventDefault();
-    deferredPrompt = e;
-  });
-
-  // ============================================================
-  // Splash progress (feedback bertahap)
+  // Splash progress
   // ============================================================
   var progVal = 0, progTimer = null, slowTimer = null;
-
   function mulaiProgres() {
     progVal = 5;
     splashBar.style.width = progVal + '%';
@@ -332,40 +408,97 @@
       if (progVal > 30 && progVal < 60) splashStep.textContent = 'Memuat aplikasi…';
       else if (progVal >= 60) splashStep.textContent = 'Menyiapkan tampilan…';
     }, 100);
-
     clearTimeout(slowTimer);
     slowTimer = setTimeout(function () {
       if (splash.hidden) return;
       splashStep.textContent = 'Koneksi lambat — masih mencoba…';
     }, 10000);
   }
-
   function selesaiProgres() {
-    clearInterval(progTimer);
-    clearTimeout(slowTimer);
+    clearInterval(progTimer); clearTimeout(slowTimer);
     progVal = 100;
     splashBar.style.width = '100%';
     splashStep.textContent = 'Siap!';
   }
 
   // ============================================================
-  // Resolusi URL awal (termasuk ?target= dari shortcut)
+  // 5. Deep-link resolver
   // ============================================================
-  function alamatAwal() {
+  var DEEP_LINK_MAP = {
+    'alumni':         '?page=alumni',
+    'staff':          '?staff=1',
+    'dashboard':      '?staff=1&tab=dashboard',
+    'siswa':          '?staff=1&tab=siswa',
+    'nilai':          '?staff=1&tab=nilai',
+    'muadalah':       '?staff=1&tab=muadalah',
+    'guru':           '?staff=1&tab=guru',
+    'kenaikan-kelas': '?staff=1&tab=kenaikan-kelas',
+    'absen-kelas':    '?staff=1&tab=absen-kelas',
+    'absen-nabil':    '?staff=1&tab=absen-nabil',
+    'absen-sorogan':  '?staff=1&tab=absen-sorogan',
+    'pusat-cetak':    '?staff=1&tab=pusat-cetak',
+    'jadwal':         '?staff=1&tab=jadwal',
+    'settings':       '?staff=1&tab=settings'
+  };
+
+  function resolveUrl() {
     var params = new URLSearchParams(location.search);
     var target = params.get('target');
-    if (target === 'alumni') return window.APP_URL + '?page=alumni';
-    if (target === 'staff')  return window.APP_URL + '?staff=1';
-    if (window.INGAT_PILIHAN === false) return window.APP_URL;
-    try {
-      var t = localStorage.getItem(KUNCI_TERAKHIR);
-      if (urlSah(t)) return t;
-    } catch (e) {}
-    return window.APP_URL;
+    if (target && DEEP_LINK_MAP[target]) {
+      return { url: window.APP_URL + DEEP_LINK_MAP[target], explicit: true, target: target };
+    }
+    // Fallback ke lastUrl kalau INGAT_PILIHAN
+    if (window.INGAT_PILIHAN !== false) {
+      try {
+        var last = localStorage.getItem(KUNCI_TERAKHIR);
+        if (urlSah(last)) return { url: last, explicit: false };
+      } catch (e) {}
+    }
+    return { url: window.APP_URL, explicit: true };
   }
 
   // ============================================================
-  // Muat aplikasi
+  // 1. Load iframe dengan skip-splash pintar
+  // ============================================================
+  var _loadToken = 0;
+  var _splashShown = false;
+  var _currentIframeUrl = '';
+
+  function loadIframe(url, showSplashImmediate) {
+    var myToken = ++_loadToken;
+    _currentIframeUrl = url;
+    _splashShown = !!showSplashImmediate;
+
+    if (showSplashImmediate) {
+      tampil(splash, true);
+      splash.classList.remove('pudar');
+      mulaiProgres();
+    } else {
+      // Fast path: delay splash. Kalau load < 280ms → splash tidak pernah muncul
+      setTimeout(function () {
+        if (_splashShown || myToken !== _loadToken) return;
+        _splashShown = true;
+        tampil(splash, true);
+        splash.classList.remove('pudar');
+        mulaiProgres();
+      }, 280);
+    }
+
+    bingkai.src = url;
+  }
+
+  // Load event: fade out splash kalau memang pernah ditampilkan
+  bingkai.addEventListener('load', function () {
+    if (!_splashShown) return;
+    selesaiProgres();
+    setTimeout(function () {
+      splash.classList.add('pudar');
+      setTimeout(function () { tampil(splash, false); }, 280);
+    }, 80);
+  });
+
+  // ============================================================
+  // Network state
   // ============================================================
   function muat() {
     if (!navigator.onLine) {
@@ -374,22 +507,10 @@
       return;
     }
     tampil(offline, false);
-    tampil(splash, true);
-    splash.classList.remove('pudar');
-    mulaiProgres();
-    bingkai.src = alamatAwal();
+    var resolved = resolveUrl();
+    loadIframe(resolved.url, resolved.explicit);
   }
 
-  // Fade-out cepat (tanpa delay 350ms)
-  bingkai.addEventListener('load', function () {
-    selesaiProgres();
-    setTimeout(function () {
-      splash.classList.add('pudar');
-      setTimeout(function () { tampil(splash, false); }, 280);
-    }, 80);
-  });
-
-  // Network state
   window.addEventListener('online', function () {
     $('banner').classList.remove('show');
     muat();
@@ -399,8 +520,63 @@
     $('banner').classList.add('show');
     tampil(offline, true);
   });
-
   $('offline-retry').addEventListener('click', function () { haptic(); muat(); });
+
+  // ============================================================
+  // 2. Pull-to-refresh (dari top 30px layar)
+  // ============================================================
+  var pullZone = $('pull-zone');
+  var pullInd = $('pull-indicator');
+  var pullLabel = $('pull-label');
+
+  var ptStartY = 0, ptDragging = false, ptDistance = 0;
+  var PT_THRESHOLD = 80;
+
+  function reloadIframe() {
+    var u = _currentIframeUrl;
+    if (!u || u === 'about:blank') u = resolveUrl().url;
+    bingkai.src = 'about:blank';
+    setTimeout(function () { loadIframe(u, true); }, 60);
+  }
+
+  pullZone.addEventListener('touchstart', function (e) {
+    if (terbuka) return;
+    ptStartY = e.touches[0].clientY;
+    ptDragging = true;
+    ptDistance = 0;
+  }, { passive: true });
+
+  pullZone.addEventListener('touchmove', function (e) {
+    if (!ptDragging || terbuka) return;
+    var dy = e.touches[0].clientY - ptStartY;
+    if (dy < 0) { ptDragging = false; return; }
+    ptDistance = dy;
+    if (dy > 8) {
+      pullInd.style.opacity = Math.min(dy / 50, 1);
+      pullInd.style.transform = 'translateX(-50%) translateY(' + Math.min(dy * 0.6, 40) + 'px)';
+      pullInd.classList.toggle('ready', dy >= PT_THRESHOLD);
+      pullLabel.textContent = dy >= PT_THRESHOLD ? 'Lepas untuk muat ulang' : 'Tarik ke bawah…';
+    }
+  }, { passive: true });
+
+  pullZone.addEventListener('touchend', function () {
+    if (!ptDragging) return;
+    ptDragging = false;
+    if (ptDistance >= PT_THRESHOLD) {
+      haptic(15);
+      pullLabel.textContent = 'Memuat ulang…';
+      setTimeout(function () {
+        pullInd.style.opacity = '0';
+        pullInd.style.transform = 'translateX(-50%) translateY(-80px)';
+        pullInd.classList.remove('ready');
+        reloadIframe();
+      }, 200);
+    } else {
+      pullInd.style.opacity = '0';
+      pullInd.style.transform = 'translateX(-50%) translateY(-80px)';
+      pullInd.classList.remove('ready');
+    }
+  }, { passive: true });
 
   // ============================================================
   // Penampil cetak
@@ -421,7 +597,8 @@
 
   function bukaPenampil(url) {
     if (!urlSah(url)) return;
-    urlCetak = url; sumberCetak = null; terbuka = true; mode = 'pas'; tinggi = 1300;
+    urlCetak = url; sumberCetak = null; terbuka = true;
+    mode = 'pas'; tinggi = 1300;
     tampil(viewer, true);
     tampil(vMuat, true);
     tampil(vPesan, false);
@@ -429,7 +606,6 @@
     vFrame.src = url;
     try { history.pushState({ penampil: 1 }, ''); } catch (e) {}
     clearTimeout(pewaktu);
-    // Timeout 15s, bukan 25s
     pewaktu = setTimeout(function () {
       if (!terbuka || sumberCetak) return;
       vPesan.innerHTML = 'Halaman lama dimuat. Ketuk <b>&#8599;</b> untuk membuka di Chrome.';
@@ -447,7 +623,7 @@
     }
   }
 
-  // Swipe-down untuk tutup (dari top bar)
+  // Swipe-down pada top bar viewer
   var tStartY = 0, tDragging = false;
   vbar.addEventListener('touchstart', function (e) {
     if (e.touches.length !== 1) return;
@@ -505,7 +681,7 @@
       if (window.INGAT_PILIHAN !== false) {
         try { localStorage.setItem(KUNCI_TERAKHIR, d.url); } catch (x) {}
       }
-      bingkai.src = d.url;
+      loadIframe(d.url, true);
     } else if (d.simak === 'cetak' && urlSah(d.url)) {
       bukaPenampil(d.url);
     } else if (d.simak === 'cetak-siap' && terbuka) {
