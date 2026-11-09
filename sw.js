@@ -1,82 +1,95 @@
-/* SW v3 — cache shell (GitHub Pages) + cache aplikasi (Apps Script) */
-var CACHE_SHELL = 'simak-kerangka-v3';
-var CACHE_APP   = 'simak-aplikasi-v1';
-var SHELL = ['./', './index.html', './config.js', './manifest.webmanifest',
-             './icons/icon-192.png', './icons/icon-512.png'];
+/* ============================================================
+   Service Worker — SIMAK SMAI DUBA
+   Strategy:
+   - Shell (HTML/CSS/JS/ikon) : stale-while-revalidate
+   - Navigation                : network-first + navigationPreload
+   - Data Google Apps Script   : TIDAK di-cache (selalu fresh)
+   ============================================================ */
+const VERSION = 'v3';                 // ⬅️ bump setiap kali file kerangka berubah
+const CACHE = `simak-kerangka-${VERSION}`;
+const KERANGKA = [
+  './',
+  './index.html',
+  './config.js',
+  './manifest.webmanifest',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
+];
 
-// Cocokkan URL eksekusi Apps Script (bukan halaman cetak dengan ?page=...)
-var GAS_RE = /^https:\/\/script\.google\.com\/macros\/[^/]+\/(exec|dev)(\?|$)/;
-var GAS_PRINT_RE = /[?&]page=/;   // halaman cetak: JANGAN di-cache (params dinamis)
-
-self.addEventListener('install', function (e) {
+/* ---------- INSTALL ---------- */
+self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE_SHELL)
-      .then(function (c) { return c.addAll(SHELL); })
-      .then(function () { return self.skipWaiting(); })
+    caches.open(CACHE)
+      .then((c) => c.addAll(KERANGKA))
+      .then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('activate', function (e) {
-  e.waitUntil(
-    caches.keys().then(function (ks) {
-      return Promise.all(
-        ks.filter(function (k) { return k !== CACHE_SHELL && k !== CACHE_APP; })
-          .map(function (k) { return caches.delete(k); })
-      );
-    }).then(function () { return self.clients.claim(); })
-  );
+/* ---------- ACTIVATE ---------- */
+self.addEventListener('activate', (e) => {
+  e.waitUntil((async () => {
+    // Aktifkan navigation preload kalau didukung (Chrome/Edge)
+    if (self.registration.navigationPreload) {
+      try { await self.registration.navigationPreload.enable(); } catch (e) {}
+    }
+    // Hapus cache versi lama
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    await self.clients.claim();
+  })());
 });
 
-self.addEventListener('fetch', function (event) {
-  var req = event.request;
+/* ---------- FETCH ---------- */
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
   if (req.method !== 'GET') return;
 
-  var url = new URL(req.url);
+  const url = new URL(req.url);
+  // Jangan sentuh permintaan ke Google / CDN
+  if (url.origin !== self.location.origin) return;
 
-  // ─── 1. SHELL (GitHub Pages) — cache-first ──────────────────
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(req).then(function (m) {
-        if (m) return m;
-        return fetch(req).then(function (res) {
-          if (res && res.ok) {
-            var clone = res.clone();
-            caches.open(CACHE_SHELL).then(function (c) {
-              c.put(req, clone).catch(function () {});
-            });
-          }
-          return res;
-        });
-      }).catch(function () { return caches.match('./index.html'); })
-    );
+  // ── 1. Navigation: network-first + navigationPreload
+  if (req.mode === 'navigate') {
+    e.respondWith((async () => {
+      try {
+        // Coba ambil dari navigationPreload (lebih cepat)
+        const preload = await e.preloadResponse;
+        if (preload) {
+          const clone = preload.clone();
+          caches.open(CACHE).then((c) => c.put(req, clone));
+          return preload;
+        }
+        // Fallback network
+        const net = await fetch(req);
+        const clone = net.clone();
+        caches.open(CACHE).then((c) => c.put(req, clone));
+        return net;
+      } catch (err) {
+        // Offline → pakai cache
+        const cached = await caches.match(req);
+        return cached || caches.match('./index.html');
+      }
+    })());
     return;
   }
 
-  // ─── 2. APLIKASI (Apps Script) — stale-while-revalidate ─────
-  // Hanya cache halaman utama (Gate & Index), skip halaman cetak dinamis
-  if (GAS_RE.test(req.url) && !GAS_PRINT_RE.test(url.search)) {
-    event.respondWith(
-      caches.open(CACHE_APP).then(function (cache) {
-        return cache.match(req).then(function (cached) {
-          var network = fetch(req).then(function (res) {
-            if (res && res.ok) {
-              return cache.put(req, res.clone())
-                .then(function () { return res; })
-                .catch(function () { return res; });
-            }
-            return res;
-          }).catch(function () { return cached; });
+  // ── 2. Aset kerangka: stale-while-revalidate
+  e.respondWith((async () => {
+    const cached = await caches.match(req);
+    const fetchPromise = fetch(req).then((res) => {
+      if (res && res.ok) {
+        const clone = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, clone));
+      }
+      return res;
+    }).catch(() => cached);
+    return cached || fetchPromise;
+  })());
+});
 
-          if (cached) {
-            event.waitUntil(network);   // revalidate di background
-            return cached;              // user lihat cache SEKARANG (instan)
-          }
-          return network;
-        });
-      })
-    );
-    return;
+/* ---------- MESSAGE (dari halaman → update banner) ---------- */
+self.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
-
-  // Halaman cetak dinamis & lain-lain: biarkan pass-through
 });
