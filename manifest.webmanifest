@@ -43,6 +43,12 @@
       "short_name": "Nilai",
       "description": "Buka halaman nilai akademik",
       "url": "/?target=nilai"
+    },
+    {
+      "name": "Kalender Akademik",
+      "short_name": "Kalender",
+      "description": "Agenda kegiatan dan hari libur sekolah",
+      "url": "/?target=kaldik"
     }
   ]
 }
