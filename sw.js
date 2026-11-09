@@ -5,7 +5,7 @@
    - Navigation                : network-first + navigationPreload
    - Data Google Apps Script   : TIDAK di-cache (selalu fresh)
    ============================================================ */
-const VERSION = 'v9';                 // ⬅️ bump setiap kali file kerangka berubah
+const VERSION = 'v10';                 // ⬅️ bump setiap kali file kerangka berubah
 const CACHE = `simak-kerangka-${VERSION}`;
 const KERANGKA = [
   './',
@@ -13,7 +13,8 @@ const KERANGKA = [
   './config.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './icons/icon-maskable-512.png'
 ];
 
 /* ---------- INSTALL ---------- */
