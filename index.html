@@ -8,697 +8,336 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SIMAK">
-<meta name="description" content="Sistem Informasi Akademik SMA Al-Itsbatiyah Darul Ulum Banyuanyar">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-
-<!-- ⚡ Resource hints -->
 <link rel="preconnect" href="https://script.google.com" crossorigin>
 <link rel="dns-prefetch" href="https://script.google.com">
-<link rel="preconnect" href="https://www.google.com">
-<link rel="dns-prefetch" href="https://www.google.com">
-
 <title>SIMAK SMAI DUBA</title>
 <style>
-  :root {
-    --brand: #10b981;
-    --brand-d: #059669;
-    --bg: #020617;
-    --bg-elev: #0f172a;
-    --text: #e2e8f0;
-    --text-dim: #94a3b8;
-    --border: #1e293b;
-  }
-  html, body {
-    margin: 0; height: 100%;
-    background: var(--bg); overflow: hidden;
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    -webkit-tap-highlight-color: transparent;
-  }
-  #app { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: var(--bg); }
-
-  /* ============================================================
-     PULL-TO-REFRESH ZONE (invisible grab handle di atas)
-     ============================================================ */
-  #pull-zone {
-    position: fixed; top: 0; left: 0; right: 0; height: 30px;
-    z-index: 15;
-    touch-action: none;
-  }
-  #pull-indicator {
-    position: fixed;
-    top: calc(env(safe-area-inset-top, 0px) + 6px);
-    left: 50%;
-    transform: translateX(-50%) translateY(-80px);
-    z-index: 18;
-    display: flex; align-items: center; gap: 8px;
-    padding: 8px 14px;
-    border-radius: 999px;
-    background: var(--bg-elev);
-    color: var(--text);
-    font-size: 12px; font-weight: 600;
-    box-shadow: 0 8px 24px -8px rgba(0,0,0,.55);
-    border: 1px solid rgba(16,185,129,.3);
-    pointer-events: none;
-    opacity: 0;
-    transition: transform 120ms linear, opacity 120ms linear;
-    will-change: transform, opacity;
-  }
-  #pull-indicator .pull-spin {
-    width: 14px; height: 14px;
-    border: 2px solid rgba(16,185,129,.25);
-    border-top-color: #10b981;
-    border-radius: 50%;
-    animation: putar .8s linear infinite;
-  }
-  #pull-indicator.ready { border-color: rgba(16,185,129,.7); }
-  #pull-indicator.ready .pull-spin { border-top-color: #34d399; }
-  #pull-indicator .pull-arrow {
-    width: 14px; height: 14px;
-    transition: transform 200ms ease;
-  }
-  #pull-indicator.ready .pull-arrow { transform: rotate(180deg); }
-
-  /* ============================================================
-     LAYAR (splash/offline/setup)
-     ============================================================ */
-  .layar {
-    position: fixed; inset: 0; z-index: 5;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 14px; padding: 24px; text-align: center;
-    color: var(--text); background: var(--bg);
-    transition: opacity .28s ease;
-  }
-  .layar[hidden] { display: none; }
-  .layar.pudar { opacity: 0; pointer-events: none; }
-
-  /* ---------- Logo SVG draw-in ---------- */
-  .logo-wrap {
-    width: 92px; height: 92px; padding: 14px;
-    border-radius: 24px;
-    background: linear-gradient(135deg, rgba(16,185,129,.14), rgba(20,184,166,.06));
-    border: 1px solid rgba(16,185,129,.35);
-    box-shadow: 0 18px 40px -14px rgba(16,185,129,.55);
-    display: flex; align-items: center; justify-content: center;
-    animation: logoFade 400ms cubic-bezier(0.16,1,0.3,1);
-  }
-  @keyframes logoFade {
-    from { opacity: 0; transform: scale(.85) translateY(6px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-  }
-  #splash-logo { width: 100%; height: 100%; display: block; }
-  #splash-logo .draw-1,
-  #splash-logo .draw-2 {
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-    animation: draw 1.4s cubic-bezier(0.16,1,0.3,1) forwards;
-  }
-  #splash-logo .draw-2 { animation-delay: 0.5s; }
-  @keyframes draw { to { stroke-dashoffset: 0; } }
-
-  .judul { font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: #fff; }
-  .sub { font-size: 13px; line-height: 1.55; color: var(--text-dim); max-width: 320px; }
-  .step {
-    font-size: 12px; color: var(--text-dim); font-weight: 500;
-    min-height: 18px;
-  }
-
-  /* ---------- Progress bar ---------- */
-  .prog {
-    width: 180px; height: 4px; margin-top: 4px;
-    background: rgba(255,255,255,.08); border-radius: 999px; overflow: hidden;
-  }
-  .prog .bar {
-    height: 100%; width: 0;
-    background: linear-gradient(90deg, #10b981, #14b8a6);
-    border-radius: 999px; transition: width 200ms ease;
-  }
-
-  /* ---------- Spinner ---------- */
-  .spin {
-    width: 26px; height: 26px;
-    border: 3px solid rgba(16,185,129,.25);
-    border-top-color: #10b981; border-radius: 50%;
-    animation: putar .8s linear infinite;
-  }
-  @keyframes putar { to { transform: rotate(360deg); } }
-
-  /* ---------- Tombol ---------- */
-  .tombol {
-    margin-top: 6px; padding: 12px 22px; border: 0; border-radius: 14px;
-    font-size: 14px; font-weight: 700; color: #fff;
-    background: linear-gradient(135deg, #10b981, #059669);
-    cursor: pointer; transition: transform 150ms;
-  }
-  .tombol:active { transform: scale(.97); }
-
-  /* ---------- Banner offline & update ---------- */
-  #banner, #update-banner {
-    position: fixed; left: 12px; right: 12px;
-    display: none; align-items: center; gap: 10px;
-    font-size: 13px; font-weight: 600;
-    border-radius: 12px; padding: 12px 14px;
-  }
-  #banner { top: calc(env(safe-area-inset-top,0px) + 8px); z-index: 30;
-            background: #7f1d1d; color: #fecaca; box-shadow: 0 8px 24px -8px rgba(0,0,0,.6); }
-  #update-banner { bottom: calc(env(safe-area-inset-bottom,0px) + 12px); z-index: 35;
-                   background: var(--bg-elev); color: var(--text);
-                   border: 1px solid rgba(16,185,129,.35); box-shadow: 0 16px 40px -8px rgba(0,0,0,.6); }
-  #banner.show, #update-banner.show { display: flex; animation: slideIn 300ms cubic-bezier(0.16,1,0.3,1); }
-  @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-  #update-banner button {
-    margin-left: auto; padding: 8px 14px; border: 0; border-radius: 10px;
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
-  }
-
-  /* ---------- Penampil cetak ---------- */
-  #viewer { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; background: #cbd5e1; }
-  #viewer[hidden] { display: none; }
-  .vbar {
-    flex: 0 0 auto; display: flex; align-items: center; gap: 6px;
-    padding: 6px 8px; padding-top: calc(6px + env(safe-area-inset-top, 0px));
-    background: #047857; color: #fff;
-    box-shadow: 0 2px 12px -4px rgba(0,0,0,.3);
-    transition: transform 100ms linear; will-change: transform;
-  }
-  .vjudul { flex: 1; min-width: 0; font-size: 14px; font-weight: 800;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .vbtn { min-width: 44px; height: 44px; padding: 0 12px; border: 0; border-radius: 12px;
-          font-size: 14px; font-weight: 700; color: #fff;
-          background: rgba(255,255,255,.16); cursor: pointer;
-          transition: background 150ms, transform 150ms; }
-  .vbtn:active { background: rgba(255,255,255,.3); transform: scale(.95); }
-  .vbtn.utama { background: #fff; color: #065f46; }
-  .vbtn.utama:active { background: #e2e8f0; }
-  .vbody { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; position: relative; }
-  #v-sizer { position: relative; margin: 0 auto; }
-  #v-frame { position: absolute; top: 0; left: 0; border: 0; background: #fff;
-             transform-origin: 0 0; box-shadow: 0 0 0 1px #cbd5e1; }
-  .v-muat, .v-pesan {
-    position: absolute; left: 12px; right: 12px; z-index: 3;
-    text-align: center; border-radius: 14px; padding: 12px 14px; font-size: 13px;
-  }
-  .v-muat {
-    top: calc(env(safe-area-inset-top, 0px) + 70px);
-    background: var(--bg-elev); color: var(--text);
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-  }
-  .v-muat .spin { width: 16px; height: 16px; border-width: 2.5px; }
-  .v-pesan {
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-    background: #fff; color: #0f172a;
-    box-shadow: 0 10px 30px -10px rgba(0,0,0,.5);
-  }
-  .v-muat[hidden], .v-pesan[hidden] { display: none; }
-
-  /* ============================================================
-     MODE HEMAT DATA (saveData / 2G)
-     ============================================================ */
-  .hemat-data .logo-wrap { animation: none !important; }
-  .hemat-data #splash-logo .draw-1,
-  .hemat-data #splash-logo .draw-2 {
-    animation: none !important;
-    stroke-dashoffset: 0 !important;
-  }
-  .hemat-data .spin { animation-duration: 1.2s !important; }
-  .hemat-data .prog .bar { transition: none !important; }
-  .hemat-data #banner.show,
-  .hemat-data #update-banner.show { animation: none !important; }
+  :root{--brand:#10b981;--bg:#020617;--bg-elev:#0f172a;--text:#e2e8f0;--text-dim:#94a3b8}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);overflow:hidden;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--text);-webkit-tap-highlight-color:transparent}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 50% at 20% 10%,rgba(16,185,129,.12),transparent 60%),radial-gradient(ellipse 60% 50% at 80% 90%,rgba(20,184,166,.10),transparent 60%);pointer-events:none;z-index:0}
+  body::after{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,rgba(148,163,184,.06) 1px,transparent 1px);background-size:28px 28px;mask-image:radial-gradient(ellipse at center,#000 30%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse at center,#000 30%,transparent 75%);pointer-events:none;z-index:0}
+  #screens{position:fixed;inset:0;z-index:5;overflow:hidden}
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;transition:transform 320ms cubic-bezier(.16,1,.3,1),opacity 320ms;will-change:transform,opacity}
+  .screen[data-state="active"]{transform:translateX(0);opacity:1;pointer-events:auto}
+  .screen[data-state="hidden"]{transform:translateX(0);opacity:0;pointer-events:none}
+  .screen[data-state="left"]{transform:translateX(-40%);opacity:0;pointer-events:none}
+  .screen[data-state="right"]{transform:translateX(40%);opacity:0;pointer-events:none}
+  body.no-anim .screen{transition:none!important}
+  .logo-wrap{width:76px;height:76px;margin:0 auto 18px;border-radius:22px;background:linear-gradient(135deg,rgba(16,185,129,.18),rgba(20,184,166,.10));border:1px solid rgba(16,185,129,.35);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px -8px rgba(16,185,129,.4)}
+  .logo-wrap svg{width:36px;height:36px;stroke:var(--brand)}
+  .title{font-size:22px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(135deg,#fff,#a7f3d0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;text-align:center}
+  .subtitle{font-size:13px;color:var(--text-dim);margin-bottom:28px;text-align:center}
+  .wrap{width:100%;max-width:380px}
+  .btn{display:flex;align-items:center;gap:14px;width:100%;padding:16px 18px;border-radius:16px;color:#fff;margin-bottom:12px;font-family:inherit;font-size:15px;font-weight:700;border:1px solid transparent;cursor:pointer;text-align:left;transition:all 220ms cubic-bezier(.16,1,.3,1)}
+  .btn:active{transform:scale(.98)}
+  .btn-primary{background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 8px 24px -8px rgba(16,185,129,.6)}
+  .btn-secondary{background:rgba(30,41,59,.7);border-color:rgba(71,85,105,.6)}
+  .btn-secondary:hover{border-color:rgba(16,185,129,.4);background:rgba(30,41,59,.9)}
+  .btn-icon-wrap{width:44px;height:44px;flex-shrink:0;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15)}
+  .btn-secondary .btn-icon-wrap{background:rgba(16,185,129,.15)}
+  .btn-icon-wrap svg{width:22px;height:22px;stroke:#fff}
+  .btn-secondary .btn-icon-wrap svg{stroke:var(--brand)}
+  .btn-text{flex:1;min-width:0}
+  .btn-title{font-size:15px;font-weight:700;margin-bottom:2px}
+  .btn-sub{font-size:11px;font-weight:500;opacity:.75}
+  .btn-secondary .btn-sub{color:var(--text-dim)}
+  .back-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;margin-bottom:20px;background:transparent;border:0;color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border-radius:8px;align-self:flex-start;transition:color 150ms}
+  .back-btn:hover{color:#fff}
+  .back-btn svg{width:14px;height:14px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:6px}
+  .input{width:100%;padding:12px 14px;background:rgba(15,23,42,.6);border:1.5px solid rgba(51,65,85,.8);border-radius:12px;font-size:14px;font-family:inherit;color:#fff;outline:none;transition:border-color 180ms,background 180ms}
+  .input:focus{border-color:var(--brand);background:rgba(15,23,42,.9)}
+  .input::placeholder{color:rgba(100,116,139,.7)}
+  .submit-btn{width:100%;padding:14px;background:linear-gradient(135deg,#10b981,#059669);border:0;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform 150ms,opacity 150ms}
+  .submit-btn:active{transform:scale(.98)}
+  .submit-btn:disabled{opacity:.6;cursor:not-allowed}
+  .error-msg{padding:10px 12px;margin-bottom:14px;border-radius:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:#fca5a5;font-size:12px;display:none}
+  .error-msg.show{display:block}
+  .results-list{max-height:300px;overflow-y:auto;margin-top:16px;display:none;flex-direction:column;gap:8px}
+  .results-list.show{display:flex}
+  .result-item{padding:12px 14px;background:rgba(15,23,42,.6);border:1px solid rgba(51,65,85,.6);border-radius:12px;cursor:pointer;transition:border-color 150ms,background 150ms;text-align:left;font-family:inherit;color:inherit}
+  .result-item:hover{border-color:rgba(16,185,129,.5);background:rgba(16,185,129,.05)}
+  .result-name{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px}
+  .result-meta{font-size:11px;color:var(--text-dim);font-family:ui-monospace,monospace}
+  .selected-card{padding:14px;margin-bottom:20px;background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.3);border-radius:12px}
+  .selected-name{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px}
+  .selected-detail{font-size:12px;color:var(--text-dim)}
+  .dob-row{display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:8px;margin-bottom:6px}
+  .dob-label{font-size:10px;text-align:center;color:var(--text-dim);margin-top:4px}
+  #loading-overlay{position:fixed;inset:0;z-index:50;background:rgba(2,6,23,.95);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px}
+  #loading-overlay.show{display:flex}
+  .spinner{width:42px;height:42px;border:3px solid rgba(16,185,129,.2);border-top-color:var(--brand);border-radius:50%;animation:spin 800ms linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-text{font-size:13px;color:var(--text-dim);font-weight:500}
+  #app{position:fixed;inset:0;z-index:10;width:100%;height:100%;border:0;background:var(--bg);opacity:0;pointer-events:none;transition:opacity 400ms ease;visibility:hidden}
+  #app.visible{opacity:1;pointer-events:auto;visibility:visible}
 </style>
 </head>
-<body>
+<body class="no-anim">
 
-<!-- ============ SPLASH ============ -->
-<div id="splash" class="layar">
-  <div class="logo-wrap">
-    <svg id="splash-logo" viewBox="0 0 48 48" fill="none"
-         stroke-linecap="round" stroke-linejoin="round">
-      <defs>
-        <linearGradient id="splash-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#34d399"/>
-          <stop offset="100%" stop-color="#14b8a6"/>
-        </linearGradient>
-      </defs>
-      <path class="draw-1" pathLength="1" d="M44 20v12M4 20l20-10 20 10-20 10z"
-            stroke="url(#splash-grad)" stroke-width="2.5"/>
-      <path class="draw-2" pathLength="1" d="M12 24v10c6 6 18 6 24 0V24"
-            stroke="url(#splash-grad)" stroke-width="2.5"/>
-    </svg>
-  </div>
-  <div class="judul">SIMAK SMAI DUBA</div>
-  <div class="step" id="splash-step">Menghubungkan ke server…</div>
-  <div class="prog"><div class="bar" id="splash-bar"></div></div>
-</div>
-
-<!-- ============ OFFLINE ============ -->
-<div id="offline" class="layar" hidden>
-  <div class="logo-wrap">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8"
-         stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%">
-      <line x1="1" y1="1" x2="23" y2="23"/>
-      <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
-      <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
-      <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
-      <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
-      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-      <line x1="12" y1="20" x2="12.01" y2="20"/>
-    </svg>
-  </div>
-  <div class="judul">Tidak ada koneksi internet</div>
-  <div class="sub">Aplikasi membutuhkan internet untuk membaca data sekolah. Periksa koneksi Anda lalu coba lagi.</div>
-  <button type="button" class="tombol" id="offline-retry">Coba lagi</button>
-</div>
-
-<!-- ============ SETUP ============ -->
-<div id="setup" class="layar" hidden>
-  <div class="judul">Alamat aplikasi belum diisi</div>
-  <div class="sub">Buka berkas <b>config.js</b>, ganti tulisan <b>GANTI_DENGAN_ALAMAT_APLIKASI_ANDA</b> dengan alamat aplikasi (diawali https://script.google.com/ dan berakhiran /exec), lalu unggah ulang.</div>
-</div>
-
-<!-- ============ PULL-TO-REFRESH ZONE (invisible) ============ -->
-<div id="pull-zone" aria-hidden="true"></div>
-<div id="pull-indicator" aria-hidden="true">
-  <div class="pull-spin"></div>
-  <span id="pull-label">Tarik ke bawah…</span>
-</div>
-
-<!-- ============ MAIN APP FRAME ============ -->
-<iframe id="app" title="SIMAK SMAI DUBA" allow="clipboard-write; fullscreen"></iframe>
-
-<!-- ============ PRINT VIEWER ============ -->
-<div id="viewer" hidden>
-  <div class="vbar" id="vbar">
-    <button type="button" class="vbtn" id="v-tutup" aria-label="Tutup">&#10005;</button>
-    <div class="vjudul">Pratinjau Cetak</div>
-    <button type="button" class="vbtn" id="v-zoom">Perbesar</button>
-    <button type="button" class="vbtn" id="v-luar" aria-label="Buka di Chrome" title="Buka di Chrome">&#8599;</button>
-    <button type="button" class="vbtn utama" id="v-cetak">Cetak</button>
-  </div>
-  <div class="vbody" id="v-body">
-    <div id="v-sizer"><iframe id="v-frame" title="Pratinjau cetak"></iframe></div>
-    <div class="v-muat" id="v-muat">
-      <div class="spin" aria-hidden="true"></div>
-      <span>Menyiapkan halaman…</span>
+<div id="screens">
+  <!-- Chooser -->
+  <div class="screen" data-screen="chooser" data-state="active">
+    <div class="wrap" style="text-align:center">
+      <div class="logo-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+        </svg>
+      </div>
+      <h1 class="title">SIMAK SMAI DUBA</h1>
+      <p class="subtitle">Pilih jenis akses Anda</p>
+      <button class="btn btn-primary" onclick="gotoScreen('alumni-search')">
+        <div class="btn-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+        <div class="btn-text"><div class="btn-title">Portal Alumni</div><div class="btn-sub">Untuk siswa lulusan</div></div>
+      </button>
+      <button class="btn btn-secondary" onclick="gotoScreen('staff')">
+        <div class="btn-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div class="btn-text"><div class="btn-title">Login Staff</div><div class="btn-sub">Untuk guru &amp; pegawai</div></div>
+      </button>
+      <div style="margin-top:32px;font-size:10.5px;color:#64748b;line-height:1.6">
+        <strong style="color:#94a3b8">SMA Al-Itsbatiyah Darul Ulum Banyuanyar</strong><br>Sistem Informasi Akademik
+      </div>
     </div>
-    <div class="v-pesan" id="v-pesan" hidden></div>
+  </div>
+
+  <!-- Staff login -->
+  <div class="screen" data-screen="staff" data-state="right">
+    <div class="wrap">
+      <button class="back-btn" onclick="gotoScreen('chooser')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Kembali</button>
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:6px">Login Staff</h2>
+      <p style="font-size:13px;color:var(--text-dim);margin-bottom:28px">Masuk untuk mengakses dashboard akademik</p>
+      <div class="error-msg" id="staff-error"></div>
+      <form id="staff-form">
+        <div class="field"><label>Username</label><input type="text" class="input" id="staff-user" placeholder="masukkan username" required autocomplete="username" spellcheck="false"></div>
+        <div class="field"><label>Kata Sandi</label><input type="password" class="input" id="staff-pass" placeholder="masukkan password" required autocomplete="current-password"></div>
+        <button type="submit" class="submit-btn" id="staff-submit">Masuk ke Dashboard</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Alumni search -->
+  <div class="screen" data-screen="alumni-search" data-state="right">
+    <div class="wrap">
+      <button class="back-btn" onclick="gotoScreen('chooser')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Kembali</button>
+      <h2 style="font-size:22px;font-weight:800;margin-bottom:6px">Portal Alumni</h2>
+      <p style="font-size:13px;color:var(--text-dim);margin-bottom:28px">Cari nama Anda, lalu masuk dengan tanggal lahir</p>
+      <div class="error-msg" id="alumni-error"></div>
+      <form id="alumni-search-form">
+        <div class="field"><label>Nama Siswa atau Nama Ayah</label><input type="text" class="input" id="alumni-keyword" placeholder="Contoh: Ahmad Fauzi" required autocomplete="off" spellcheck="false"></div>
+        <button type="submit" class="submit-btn" id="alumni-search-btn">Cari Nama</button>
+      </form>
+      <div class="results-list" id="alumni-results"></div>
+    </div>
+  </div>
+
+  <!-- Alumni verify -->
+  <div class="screen" data-screen="alumni-verify" data-state="right">
+    <div class="wrap">
+      <button class="back-btn" onclick="gotoScreen('alumni-search')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Pilih nama lain</button>
+      <div class="selected-card">
+        <div style="font-size:10px;letter-spacing:.08em;color:#34d399;font-weight:700;margin-bottom:6px">DATA ANDA</div>
+        <div class="selected-name" id="alumni-selected-name">-</div>
+        <div class="selected-detail" id="alumni-selected-detail">-</div>
+      </div>
+      <div class="error-msg" id="alumni-verify-error"></div>
+      <form id="alumni-verify-form">
+        <div class="field">
+          <label>Tanggal Lahir (bukti bahwa ini adalah Anda)</label>
+          <div class="dob-row">
+            <input type="text" class="input" id="alumni-tgl" placeholder="20" maxlength="2" inputmode="numeric" required>
+            <input type="text" class="input" id="alumni-bln" placeholder="05" maxlength="2" inputmode="numeric" required>
+            <input type="text" class="input" id="alumni-thn" placeholder="2000" maxlength="4" inputmode="numeric" required>
+          </div>
+          <div class="dob-row"><div class="dob-label">Tanggal</div><div class="dob-label">Bulan</div><div class="dob-label">Tahun</div></div>
+        </div>
+        <button type="submit" class="submit-btn" id="alumni-verify-btn">Masuk</button>
+      </form>
+    </div>
   </div>
 </div>
 
-<!-- ============ BANNER OFFLINE ============ -->
-<div id="banner" role="status">
-  <span>⚠️</span>
-  <span id="banner-text">Koneksi terputus — menunggu internet kembali…</span>
-</div>
-
-<!-- ============ BANNER UPDATE ============ -->
-<div id="update-banner" role="status">
-  <span style="font-size:18px">✨</span>
-  <span>Versi baru tersedia</span>
-  <button type="button" id="update-btn">Muat ulang</button>
-</div>
+<div id="loading-overlay"><div class="spinner"></div><div class="loading-text" id="loading-text">Memuat...</div></div>
+<iframe id="app" title="SIMAK SMAI DUBA" allow="clipboard-write; fullscreen"></iframe>
 
 <script src="config.js"></script>
 <script>
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var bingkai = $('app'), splash = $('splash'), offline = $('offline'), setup = $('setup');
-  var viewer = $('viewer'), vFrame = $('v-frame'), vSizer = $('v-sizer'), vBody = $('v-body');
-  var vMuat = $('v-muat'), vPesan = $('v-pesan'), vZoom = $('v-zoom'), vbar = $('vbar');
-  var splashBar = $('splash-bar'), splashStep = $('splash-step');
+  var iframe = $('app'), screens = $('screens'), overlay = $('loading-overlay'), overlayText = $('loading-text');
+  var iframeMode = '', iframeReady = false, pendingAction = null, alumniSelected = null;
+  var SCREEN_ORDER = ['chooser', 'staff', 'alumni-search', 'alumni-verify'];
 
-  var RE_URL = /^https:\/\/script\.google\.com\/(macros|a\/)/;
-  var KUNCI_TERAKHIR = 'simak_terakhir';
-  function urlSah(u) { return typeof u === 'string' && RE_URL.test(u); }
-  function asalSah(o) { return o === 'https://script.google.com' || /^https:\/\/[a-z0-9-]+\.googleusercontent\.com$/.test(String(o)); }
-  function tampil(el, ya) { el.hidden = !ya; }
-  function haptic(ms) { try { navigator.vibrate && navigator.vibrate(ms || 8); } catch (e) {} }
-
-  // Validasi config
-  if (!urlSah(String(window.APP_URL || ''))) {
-    tampil(splash, false); tampil(setup, true);
-    bingkai.style.display = 'none';
+  if (!window.APP_URL || !/^https:\/\/script\.google\.com\/(macros|a\/)/.test(window.APP_URL)) {
+    document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#fff">Alamat aplikasi belum diisi di config.js</div>';
     return;
   }
+  requestAnimationFrame(function () { requestAnimationFrame(function () { document.body.classList.remove('no-anim'); }); });
 
-  // ============================================================
-  // 3. Deteksi mode hemat data / koneksi lambat
-  // ============================================================
-  var slowNet = false;
-  try {
-    if (navigator.connection) {
-      var conn = navigator.connection;
-      if (conn.saveData === true) slowNet = true;
-      else if (['slow-2g', '2g'].indexOf(conn.effectiveType) !== -1) slowNet = true;
-    }
-  } catch (e) {}
-  if (slowNet) document.documentElement.classList.add('hemat-data');
-
-  // ============================================================
-  // Service worker + deteksi update
-  // ============================================================
-  var swReg = null, swReloading = false;
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js').then(function (reg) {
-        swReg = reg;
-        reg.addEventListener('updatefound', function () {
-          var w = reg.installing;
-          if (!w) return;
-          w.addEventListener('statechange', function () {
-            if (w.state === 'installed' && navigator.serviceWorker.controller) {
-              $('update-banner').classList.add('show');
-            }
-          });
-        });
-        // Polling tiap 5 menit untuk app yang dibiarkan terbuka
-        setInterval(function () { reg.update().catch(function () {}); }, 5 * 60 * 1000);
-      }).catch(function () {});
+  // ---- Navigasi layar + slide ----
+  function gotoScreen(name) {
+    var cur = document.querySelector('.screen[data-state="active"]');
+    var curName = cur ? cur.dataset.screen : 'chooser';
+    if (curName === name) return;
+    var forward = SCREEN_ORDER.indexOf(name) > SCREEN_ORDER.indexOf(curName);
+    if (name === 'staff') ensureIframe('staff');
+    if (name === 'alumni-search') ensureIframe('alumni');
+    ['staff-error', 'alumni-error', 'alumni-verify-error'].forEach(function (id) {
+      var el = $(id); if (el) el.classList.remove('show');
     });
-    navigator.serviceWorker.addEventListener('controllerchange', function () {
-      if (swReloading) return;
-      swReloading = true;
-      location.reload();
+    document.querySelectorAll('.screen').forEach(function (s) {
+      if (s.dataset.screen === name) {
+        s.dataset.state = forward ? 'right' : 'left';
+        requestAnimationFrame(function () { requestAnimationFrame(function () { s.dataset.state = 'active'; }); });
+      } else if (s.dataset.screen === curName) {
+        s.dataset.state = forward ? 'left' : 'right';
+      } else {
+        s.dataset.state = 'hidden';
+      }
     });
   }
-  $('update-btn').addEventListener('click', function () {
-    haptic();
-    if (swReg && swReg.waiting) {
-      swReg.waiting.postMessage({ type: 'SKIP_WAITING' });
-    } else {
-      location.reload();
+  window.gotoScreen = gotoScreen;
+
+  // ---- Iframe management ----
+  function ensureIframe(mode) {
+    if (iframeMode === mode) return;
+    iframeMode = mode; iframeReady = false;
+    iframe.src = mode === 'staff' ? window.APP_URL + '?staff=1' : window.APP_URL + '?page=alumni';
+  }
+  iframe.addEventListener('load', function () {
+    iframeReady = true;
+    if (pendingAction) {
+      var act = pendingAction; pendingAction = null;
+      setTimeout(function () { doAction(act.type, act.payload); }, 300);
     }
   });
 
-  // ============================================================
-  // Splash progress
-  // ============================================================
-  var progVal = 0, progTimer = null, slowTimer = null;
-  function mulaiProgres() {
-    progVal = 5;
-    splashBar.style.width = progVal + '%';
-    splashStep.textContent = 'Menghubungkan ke server…';
-    clearInterval(progTimer);
-    progTimer = setInterval(function () {
-      if (progVal >= 88) return;
-      progVal += (90 - progVal) * 0.06;
-      splashBar.style.width = progVal + '%';
-      if (progVal > 30 && progVal < 60) splashStep.textContent = 'Memuat aplikasi…';
-      else if (progVal >= 60) splashStep.textContent = 'Menyiapkan tampilan…';
-    }, 100);
-    clearTimeout(slowTimer);
-    slowTimer = setTimeout(function () {
-      if (splash.hidden) return;
-      splashStep.textContent = 'Koneksi lambat — masih mencoba…';
-    }, 10000);
+  // ---- Message handler ----
+  window.addEventListener('message', function (e) {
+    if (e.origin !== 'https://script.google.com' && !/^https:\/\/[a-z0-9-]+\.googleusercontent\.com$/.test(e.origin)) return;
+    var d = e.data; if (!d || typeof d !== 'object') return;
+
+    if (d.simak === 'staff-result') {
+      if (d.ok) {
+        showLoading('Menyiapkan dashboard...');
+        var t = setTimeout(showIframe, 4000);
+        window._waitReady = function () { clearTimeout(t); showIframe(); };
+      } else {
+        hideLoading(); showError('staff-error', d.error || 'Login gagal');
+        setSubmitState('staff-submit', false);
+      }
+    }
+    if (d.simak === 'main-app-ready' && window._waitReady) {
+      window._waitReady(); window._waitReady = null;
+    }
+    if (d.simak === 'alumni-results') {
+      hideLoading();
+      if (d.ok && d.data && d.data.status === 'success') renderAlumniResults(d.data);
+      else showError('alumni-error', (d.data && d.data.message) || d.error || 'Pencarian gagal');
+      setSubmitState('alumni-search-btn', false);
+    }
+    if (d.simak === 'alumni-result') {
+      if (d.ok) {
+        showLoading('Menyiapkan portal...');
+        var t2 = setTimeout(showIframe, 4000);
+        window._waitReady = function () { clearTimeout(t2); showIframe(); };
+      } else {
+        hideLoading(); showError('alumni-verify-error', d.error || 'Verifikasi gagal');
+        setSubmitState('alumni-verify-btn', false);
+      }
+    }
+  });
+
+  function doAction(type, payload) {
+    if (!iframeReady) { pendingAction = { type: type, payload: payload }; return; }
+    try { iframe.contentWindow.postMessage({ simak: type, ...payload }, '*'); }
+    catch (err) {
+      hideLoading();
+      showError(type.indexOf('staff') !== -1 ? 'staff-error' : 'alumni-verify-error', 'Koneksi bermasalah');
+      setSubmitState(type.indexOf('staff') !== -1 ? 'staff-submit' : 'alumni-verify-btn', false);
+    }
   }
-  function selesaiProgres() {
-    clearInterval(progTimer); clearTimeout(slowTimer);
-    progVal = 100;
-    splashBar.style.width = '100%';
-    splashStep.textContent = 'Siap!';
+  function showLoading(text) { overlayText.textContent = text || 'Memuat...'; overlay.classList.add('show'); }
+  function hideLoading() { overlay.classList.remove('show'); }
+  function showIframe() { hideLoading(); iframe.classList.add('visible'); }
+  function showError(id, msg) { var el = $(id); if (el) { el.textContent = msg; el.classList.add('show'); } }
+  function setSubmitState(id, loading) {
+    var btn = $(id); if (!btn) return;
+    btn.disabled = loading;
+    if (loading) { btn.dataset.orig = btn.innerHTML; btn.innerHTML = '<span style="opacity:.8">Memproses...</span>'; }
+    else if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig;
   }
 
-  // ============================================================
-  // 5. Deep-link resolver
-  // ============================================================
-  var DEEP_LINK_MAP = {
-    'alumni':         '?page=alumni',
-    'staff':          '?staff=1',
-    'dashboard':      '?staff=1&tab=dashboard',
-    'siswa':          '?staff=1&tab=siswa',
-    'nilai':          '?staff=1&tab=nilai',
-    'muadalah':       '?staff=1&tab=muadalah',
-    'guru':           '?staff=1&tab=guru',
-    'kenaikan-kelas': '?staff=1&tab=kenaikan-kelas',
-    'kaldik':         '?staff=1&tab=kaldik',
-    'absen-kelas':    '?staff=1&tab=absen-kelas',
-    'absen-nabil':    '?staff=1&tab=absen-nabil',
-    'absen-sorogan':  '?staff=1&tab=absen-sorogan',
-    'pusat-cetak':    '?staff=1&tab=pusat-cetak',
-    'jadwal':         '?staff=1&tab=jadwal',
-    'settings':       '?staff=1&tab=settings'
+  // ---- Staff form ----
+  $('staff-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var u = $('staff-user').value.trim(), p = $('staff-pass').value;
+    if (!u || !p) { showError('staff-error', 'Isi username dan password'); return; }
+    $('staff-error').classList.remove('show');
+    setSubmitState('staff-submit', true);
+    showLoading('Memverifikasi akun...');
+    doAction('do-staff-login', { username: u, password: p });
+  });
+
+  // ---- Alumni search ----
+  $('alumni-search-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var kw = $('alumni-keyword').value.trim();
+    if (kw.length < 3) { showError('alumni-error', 'Ketik minimal 3 huruf'); return; }
+    $('alumni-error').classList.remove('show');
+    setSubmitState('alumni-search-btn', true);
+    showLoading('Mencari...');
+    doAction('do-alumni-search', { keyword: kw });
+  });
+  function renderAlumniResults(res) {
+    var list = $('alumni-results'), items = res.data || [];
+    if (!items.length) { list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:13px">Tidak ditemukan.</div>'; list.classList.add('show'); return; }
+    list.innerHTML = items.map(function (item, idx) {
+      return '<button type="button" class="result-item" onclick="pickAlumni(' + idx + ')"><div class="result-name">' + (item.nama || '-') + '</div><div class="result-meta">' + (item.noInduk || '') + (item.angkatan ? ' • Angkatan ' + item.angkatan : '') + '</div></button>';
+    }).join('');
+    list.classList.add('show');
+    window._alumniItems = items;
+  }
+  window.pickAlumni = function (idx) {
+    var item = (window._alumniItems || [])[idx]; if (!item) return;
+    alumniSelected = item;
+    $('alumni-selected-name').textContent = item.nama;
+    $('alumni-selected-detail').textContent = item.noInduk + (item.angkatan ? ' • Angkatan ' + item.angkatan : '');
+    ['alumni-tgl', 'alumni-bln', 'alumni-thn'].forEach(function (id) { $(id).value = ''; });
+    gotoScreen('alumni-verify');
+    setTimeout(function () { $('alumni-tgl').focus(); }, 350);
   };
 
-  function resolveUrl() {
-    var params = new URLSearchParams(location.search);
-    var target = params.get('target');
-    if (target && DEEP_LINK_MAP[target]) {
-      return { url: window.APP_URL + DEEP_LINK_MAP[target], explicit: true, target: target };
+  // ---- Alumni verify ----
+  $('alumni-verify-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!alumniSelected) return;
+    var d = $('alumni-tgl').value.trim(), m = $('alumni-bln').value.trim(), y = $('alumni-thn').value.trim();
+    if (!/^\d{1,2}$/.test(d) || !/^\d{1,2}$/.test(m) || !/^\d{4}$/.test(y) || +d < 1 || +d > 31 || +m < 1 || +m > 12) {
+      showError('alumni-verify-error', 'Isi tanggal lahir dengan benar. Contoh: 20 05 2000'); return;
     }
-    // Fallback ke lastUrl kalau INGAT_PILIHAN
-    if (window.INGAT_PILIHAN !== false) {
-      try {
-        var last = localStorage.getItem(KUNCI_TERAKHIR);
-        if (urlSah(last)) return { url: last, explicit: false };
-      } catch (e) {}
-    }
-    return { url: window.APP_URL, explicit: true };
-  }
-
-  // ============================================================
-  // 1. Load iframe dengan skip-splash pintar
-  // ============================================================
-  var _loadToken = 0;
-  var _splashShown = false;
-  var _currentIframeUrl = '';
-
-  function loadIframe(url, showSplashImmediate) {
-    var myToken = ++_loadToken;
-    _currentIframeUrl = url;
-    _splashShown = !!showSplashImmediate;
-
-    if (showSplashImmediate) {
-      tampil(splash, true);
-      splash.classList.remove('pudar');
-      mulaiProgres();
-    } else {
-      // Fast path: delay splash. Kalau load < 280ms → splash tidak pernah muncul
-      setTimeout(function () {
-        if (_splashShown || myToken !== _loadToken) return;
-        _splashShown = true;
-        tampil(splash, true);
-        splash.classList.remove('pudar');
-        mulaiProgres();
-      }, 280);
-    }
-
-    bingkai.src = url;
-  }
-
-  // Load event: fade out splash kalau memang pernah ditampilkan
-  bingkai.addEventListener('load', function () {
-    if (!_splashShown) return;
-    selesaiProgres();
-    setTimeout(function () {
-      splash.classList.add('pudar');
-      setTimeout(function () { tampil(splash, false); }, 280);
-    }, 80);
+    $('alumni-verify-error').classList.remove('show');
+    setSubmitState('alumni-verify-btn', true);
+    showLoading('Memverifikasi...');
+    doAction('do-alumni-login', { noInduk: alumniSelected.noInduk, tglLahir: d + ' ' + m + ' ' + y });
   });
-
-  // ============================================================
-  // Network state
-  // ============================================================
-  function muat() {
-    if (!navigator.onLine) {
-      tampil(splash, false);
-      tampil(offline, true);
-      return;
-    }
-    tampil(offline, false);
-    var resolved = resolveUrl();
-    loadIframe(resolved.url, resolved.explicit);
-  }
-
-  window.addEventListener('online', function () {
-    $('banner').classList.remove('show');
-    muat();
+  [['alumni-tgl', 'alumni-bln'], ['alumni-bln', 'alumni-thn']].forEach(function (pair) {
+    $(pair[0]).addEventListener('input', function () {
+      this.value = this.value.replace(/\D/g, '');
+      if (this.value.length === 2) $(pair[1]).focus();
+    });
   });
-  window.addEventListener('offline', function () {
-    $('banner-text').textContent = 'Koneksi terputus — menunggu internet kembali…';
-    $('banner').classList.add('show');
-    tampil(offline, true);
-  });
-  $('offline-retry').addEventListener('click', function () { haptic(); muat(); });
+  $('alumni-thn').addEventListener('input', function () { this.value = this.value.replace(/\D/g, ''); });
 
-  // ============================================================
-  // 2. Pull-to-refresh (dari top 30px layar)
-  // ============================================================
-  var pullZone = $('pull-zone');
-  var pullInd = $('pull-indicator');
-  var pullLabel = $('pull-label');
-
-  var ptStartY = 0, ptDragging = false, ptDistance = 0;
-  var PT_THRESHOLD = 80;
-
-  function reloadIframe() {
-    var u = _currentIframeUrl;
-    if (!u || u === 'about:blank') u = resolveUrl().url;
-    bingkai.src = 'about:blank';
-    setTimeout(function () { loadIframe(u, true); }, 60);
-  }
-
-  pullZone.addEventListener('touchstart', function (e) {
-    if (terbuka) return;
-    ptStartY = e.touches[0].clientY;
-    ptDragging = true;
-    ptDistance = 0;
-  }, { passive: true });
-
-  pullZone.addEventListener('touchmove', function (e) {
-    if (!ptDragging || terbuka) return;
-    var dy = e.touches[0].clientY - ptStartY;
-    if (dy < 0) { ptDragging = false; return; }
-    ptDistance = dy;
-    if (dy > 8) {
-      pullInd.style.opacity = Math.min(dy / 50, 1);
-      pullInd.style.transform = 'translateX(-50%) translateY(' + Math.min(dy * 0.6, 40) + 'px)';
-      pullInd.classList.toggle('ready', dy >= PT_THRESHOLD);
-      pullLabel.textContent = dy >= PT_THRESHOLD ? 'Lepas untuk muat ulang' : 'Tarik ke bawah…';
-    }
-  }, { passive: true });
-
-  pullZone.addEventListener('touchend', function () {
-    if (!ptDragging) return;
-    ptDragging = false;
-    if (ptDistance >= PT_THRESHOLD) {
-      haptic(15);
-      pullLabel.textContent = 'Memuat ulang…';
-      setTimeout(function () {
-        pullInd.style.opacity = '0';
-        pullInd.style.transform = 'translateX(-50%) translateY(-80px)';
-        pullInd.classList.remove('ready');
-        reloadIframe();
-      }, 200);
-    } else {
-      pullInd.style.opacity = '0';
-      pullInd.style.transform = 'translateX(-50%) translateY(-80px)';
-      pullInd.classList.remove('ready');
-    }
-  }, { passive: true });
-
-  // ============================================================
-  // Penampil cetak
-  // ============================================================
-  var LEBAR = 860, tinggi = 1300, mode = 'pas';
-  var sumberCetak = null, terbuka = false, urlCetak = '', pewaktu = null;
-
-  function ukur() {
-    var lebarLayar = vBody.clientWidth || window.innerWidth || 360;
-    var s = (mode === 'pas') ? Math.min(1, lebarLayar / LEBAR) : 1;
-    vFrame.style.width = LEBAR + 'px';
-    vFrame.style.height = tinggi + 'px';
-    vFrame.style.transform = 'scale(' + s + ')';
-    vSizer.style.width = Math.ceil(LEBAR * s) + 'px';
-    vSizer.style.height = Math.ceil(tinggi * s) + 'px';
-    vZoom.textContent = (mode === 'pas') ? 'Perbesar' : 'Pas layar';
-  }
-
-  function bukaPenampil(url) {
-    if (!urlSah(url)) return;
-    urlCetak = url; sumberCetak = null; terbuka = true;
-    mode = 'pas'; tinggi = 1300;
-    tampil(viewer, true);
-    tampil(vMuat, true);
-    tampil(vPesan, false);
-    ukur();
-    vFrame.src = url;
-    try { history.pushState({ penampil: 1 }, ''); } catch (e) {}
-    clearTimeout(pewaktu);
-    pewaktu = setTimeout(function () {
-      if (!terbuka || sumberCetak) return;
-      vPesan.innerHTML = 'Halaman lama dimuat. Ketuk <b>&#8599;</b> untuk membuka di Chrome.';
-      tampil(vPesan, true);
-    }, 15000);
-  }
-
-  function tutupPenampil(dariKembali) {
-    if (!terbuka) return;
-    terbuka = false; sumberCetak = null; clearTimeout(pewaktu);
-    tampil(viewer, false);
-    vFrame.src = 'about:blank';
-    if (!dariKembali) {
-      try { if (history.state && history.state.penampil) history.back(); } catch (e) {}
-    }
-  }
-
-  // Swipe-down pada top bar viewer
-  var tStartY = 0, tDragging = false;
-  vbar.addEventListener('touchstart', function (e) {
-    if (e.touches.length !== 1) return;
-    tStartY = e.touches[0].clientY;
-    tDragging = true;
-  }, { passive: true });
-  vbar.addEventListener('touchmove', function (e) {
-    if (!tDragging) return;
-    var dy = e.touches[0].clientY - tStartY;
-    if (dy > 0) vbar.style.transform = 'translateY(' + Math.min(dy, 80) + 'px)';
-  }, { passive: true });
-  vbar.addEventListener('touchend', function (e) {
-    if (!tDragging) return;
-    tDragging = false;
-    var dy = e.changedTouches[0].clientY - tStartY;
-    vbar.style.transform = '';
-    if (dy > 80) { haptic(); tutupPenampil(false); }
-  }, { passive: true });
-
-  window.addEventListener('popstate', function () { if (terbuka) tutupPenampil(true); });
-  window.addEventListener('resize', function () { if (terbuka) ukur(); });
-
-  $('v-tutup').addEventListener('click', function () { haptic(); tutupPenampil(false); });
-  vZoom.addEventListener('click', function () {
-    haptic();
-    mode = (mode === 'pas') ? 'penuh' : 'pas';
-    ukur();
-  });
-  $('v-luar').addEventListener('click', function () {
-    haptic();
-    if (urlCetak) window.open(urlCetak, '_blank');
-  });
-  $('v-cetak').addEventListener('click', function () {
-    haptic();
-    if (!sumberCetak) {
-      vPesan.innerHTML = 'Halaman belum siap. Tunggu sebentar atau ketuk <b>&#8599;</b> untuk membuka di Chrome.';
-      tampil(vPesan, true);
-      return;
-    }
-    try { sumberCetak.postMessage({ simak: 'cetak-sekarang' }, '*'); } catch (e) {}
-    vPesan.innerHTML = 'Bila jendela cetak tidak muncul, ketuk <b>&#8599;</b> lalu cetak dari Chrome.';
-    tampil(vPesan, true);
-    setTimeout(function () { tampil(vPesan, false); }, 6000);
-  });
-
-  // ============================================================
-  // Pesan dari iframe
-  // ============================================================
-  window.addEventListener('message', function (e) {
-    var d = e.data;
-    if (!d || typeof d !== 'object' || !asalSah(e.origin)) return;
-
-    if (d.simak === 'buka' && urlSah(d.url)) {
-      tutupPenampil(false);
-      if (window.INGAT_PILIHAN !== false) {
-        try { localStorage.setItem(KUNCI_TERAKHIR, d.url); } catch (x) {}
-      }
-      loadIframe(d.url, true);
-    } else if (d.simak === 'cetak' && urlSah(d.url)) {
-      bukaPenampil(d.url);
-    } else if (d.simak === 'cetak-siap' && terbuka) {
-      sumberCetak = e.source;
-      if (typeof d.w === 'number' && d.w > 300 && d.w < 3000) LEBAR = Math.max(860, Math.ceil(d.w));
-      if (typeof d.h === 'number' && d.h > 300 && d.h < 40000) tinggi = Math.ceil(d.h);
-      tampil(vMuat, false);
-      tampil(vPesan, false);
-      ukur();
-    } else if (d.simak === 'tutup-cetak') {
-      tutupPenampil(false);
-    }
-  });
-
-  // Mulai!
-  muat();
+  // ---- Deep-link ----
+  var target = new URLSearchParams(location.search).get('target');
+  if (target === 'staff') gotoScreen('staff');
+  else if (target === 'alumni') gotoScreen('alumni-search');
 })();
 </script>
 </body>
