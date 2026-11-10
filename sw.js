@@ -5,7 +5,7 @@
    - Navigation                : network-first + navigationPreload
    - Data Google Apps Script   : TIDAK di-cache (selalu fresh)
    ============================================================ */
-const VERSION = 'v11';                 // ⬅️ bump setiap kali file kerangka berubah
+const VERSION = 'v12';                 // ⬅️ bump setiap kali file kerangka berubah
 const CACHE = `simak-kerangka-${VERSION}`;
 const KERANGKA = [
   './',
