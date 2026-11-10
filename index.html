@@ -439,7 +439,10 @@ window.addEventListener('message', function(e){
   if (d.simak === 'logged-out') {
     try { sessionStorage.removeItem('simak_logged'); } catch(x){}
     iframe.classList.remove('visible');
-    currentScreen = 'chooser';                       // ← reset state
+    resetAllSubmitStates();                                  // ← TAMBAH: reset saat logout
+    // Hapus input password (biar tidak kelihatan sisa)
+    var sp = $('staff-pass'); if (sp) sp.value = '';
+    currentScreen = 'chooser';
     document.querySelectorAll('.screen').forEach(function(s){
       s.dataset.state = s.dataset.screen === 'chooser' ? 'active' : 'hidden';
     });
@@ -464,8 +467,15 @@ function doAction(type, payload){
 }
 function showLoading(text){ $('loading-text').textContent = text || 'Memuat...'; $('loading-overlay').classList.add('show'); }
 function hideLoading(){ $('loading-overlay').classList.remove('show'); }
+function resetAllSubmitStates(){
+  ['staff-submit','alumni-search-btn','alumni-verify-btn'].forEach(function(id){
+    setSubmitState(id, false);
+  });
+}
+
 function showIframe(){
   hideLoading();
+  resetAllSubmitStates();              // ← TAMBAH: reset setelah login sukses
   iframe.classList.add('visible');
   try { sessionStorage.setItem('simak_screen', 'app'); } catch(e){}
   currentScreen = 'app';
@@ -476,9 +486,14 @@ function hideIframe(){
 function showError(id, msg){ var el = $(id); if (el) { el.textContent = msg; el.classList.add('show'); } }
 function setSubmitState(id, loading){
   var btn = $(id); if (!btn) return;
-  btn.disabled = loading;
-  if (loading) { btn.dataset.orig = btn.innerHTML; btn.innerHTML = '<span style="opacity:.8">Memproses...</span>'; }
-  else if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig;
+  if (loading) {
+    if (!btn.dataset.orig) btn.dataset.orig = btn.innerHTML;   // simpan hanya sekali
+    btn.disabled = true;
+    btn.innerHTML = '<span style="opacity:.8">Memproses...</span>';
+  } else {
+    btn.disabled = false;
+    if (btn.dataset.orig) { btn.innerHTML = btn.dataset.orig; delete btn.dataset.orig; }
+  }
 }
 
 /* ===== Stats animation (staff login) ===== */
