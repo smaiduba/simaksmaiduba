@@ -196,7 +196,7 @@ body.no-anim .screen{transition:none!important}
       <div class="chooser-title">SIMAK SMAI DUBA</div>
       <div class="chooser-sub">Pilih jenis akses Anda</div>
       <button class="btn-card btn-card-primary" onclick="gotoScreen('alumni-search')">
-        <div class="btn-icon-wrap">...</div>
+        <div class="btn-icon-wrap"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
         <div class="btn-text"><div class="btn-title">Portal Alumni</div><div class="btn-sub">Untuk siswa lulusan</div></div>
       </button>
       <button class="btn-card btn-card-secondary" onclick="gotoScreen('staff')">
@@ -374,7 +374,7 @@ function gotoScreen(name){
   });
   currentScreen = name;
   try { sessionStorage.setItem('simak_screen', name); } catch(e){}
-  if (name === 'staff') ensureIframe('staff');
+  if (name === 'staff' && iframeMode !== 'staff') ensureIframe('staff');
   if (name === 'alumni-search' && iframeMode !== 'alumni') ensureIframe('alumni');
   if (name === 'staff') animateStats();
 }
@@ -382,7 +382,7 @@ window.gotoScreen = gotoScreen;
 
 /* ===== Iframe lifecycle ===== */
 function ensureIframe(mode){
-  if (iframeMode === mode) return;
+  if (iframeMode === mode) return;   // ← WAJIB: reuse iframe yang sudah loaded
   iframeMode = mode;
   gasWindow = null;
   pendingAction = null;
@@ -437,9 +437,13 @@ window.addEventListener('message', function(e){
     return;
   }
   if (d.simak === 'logged-out') {
-    try { sessionStorage.removeItem('simak_logged'); sessionStorage.removeItem('simak_screen'); } catch(x){}
-    hideIframe();
-    gotoScreen('chooser');
+    try { sessionStorage.removeItem('simak_logged'); } catch(x){}
+    iframe.classList.remove('visible');
+    currentScreen = 'chooser';                       // ← reset state
+    document.querySelectorAll('.screen').forEach(function(s){
+      s.dataset.state = s.dataset.screen === 'chooser' ? 'active' : 'hidden';
+    });
+    try { sessionStorage.setItem('simak_screen', 'chooser'); } catch(x){}
     return;
   }
 });
@@ -468,8 +472,6 @@ function showIframe(){
 }
 function hideIframe(){
   iframe.classList.remove('visible');
-  iframeMode = ''; gasWindow = null;
-  try { iframe.src = 'about:blank'; } catch(e){}
 }
 function showError(id, msg){ var el = $(id); if (el) { el.textContent = msg; el.classList.add('show'); } }
 function setSubmitState(id, loading){
@@ -573,7 +575,6 @@ $('alumni-thn').addEventListener('input', function(){ this.value = this.value.re
 
 /* ===== Startup ===== */
 (function startup(){
-  // Deep link
   var target = new URLSearchParams(location.search).get('target');
   var logged = '';
   try { logged = sessionStorage.getItem('simak_logged') || ''; } catch(e){}
@@ -581,12 +582,18 @@ $('alumni-thn').addEventListener('input', function(){ this.value = this.value.re
   try { lastScreen = sessionStorage.getItem('simak_screen') || ''; } catch(e){}
 
   if (logged) {
-    // User was logged in — show iframe directly (GAS will auto-bootstrap)
     ensureIframe(logged === 'alumni' ? 'alumni' : 'staff');
     showLoading('Memuat dashboard...');
     armFallback();
     return;
   }
+
+  // Preload — pilih mode yang paling mungkin dipakai user
+  var preloadMode = 'staff';
+  if (target === 'alumni' || lastScreen === 'alumni-search' || lastScreen === 'alumni-verify') {
+    preloadMode = 'alumni';
+  }
+  ensureIframe(preloadMode);
 
   if (target === 'staff') gotoScreen('staff');
   else if (target === 'alumni') gotoScreen('alumni-search');
